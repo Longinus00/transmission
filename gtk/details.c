@@ -531,7 +531,9 @@ options_page_new( struct DetailsImpl * d )
 *****
 ****/
 
-static const char * activityString( int activity )
+static const char * activityString( int                 activity,
+                                    const tr_torrent  * tor,
+                                    const tr_stat     * torStat)
 {
     switch( activity )
     {
@@ -539,7 +541,24 @@ static const char * activityString( int activity )
         case TR_STATUS_CHECK:      return _( "Verifying local data" ); break;
         case TR_STATUS_DOWNLOAD:   return _( "Downloading" ); break;
         case TR_STATUS_SEED:       return _( "Seeding" ); break;
-        case TR_STATUS_STOPPED:    return _( "Paused" ); break;
+        case TR_STATUS_STOPPED:
+        {
+            double seedRatioLimit = 0;
+            if( tr_torrentGetRatioMode( tor ) == TR_RATIOLIMIT_GLOBAL ){
+                if( pref_flag_get( TR_PREFS_KEY_RATIO_ENABLED ) )
+                    seedRatioLimit = pref_double_get( TR_PREFS_KEY_RATIO );
+            }
+            else
+                seedRatioLimit = tr_torrentGetRatioLimit( tor );
+
+            if( seedRatioLimit > 0
+                && seedRatioLimit <= torStat->ratio
+                && torStat->leftUntilDone == 0)
+                return _( "Finished" );
+            else
+                return _( "Paused" );
+            break;
+        }
     }
 
     return "";
@@ -679,7 +698,7 @@ refreshInfo( struct DetailsImpl * di, tr_torrent ** torrents, int n )
             if( baseline != (int)stats[i]->activity )
                 break;
         if( i==n )
-            str = activityString( baseline );
+            str = activityString( baseline, torrents[0], stats[0] );
         else
             str = mixed;
     }
@@ -697,7 +716,7 @@ refreshInfo( struct DetailsImpl * di, tr_torrent ** torrents, int n )
         if( i!=n )
             str = mixed;
         else if( ( baseline<=0 ) || ( stats[0]->activity == TR_STATUS_STOPPED ) )
-            str = activityString( TR_STATUS_STOPPED );
+            str = activityString( TR_STATUS_STOPPED, torrents[0], stats[0] );
         else
             str = tr_strltime( buf, time(NULL)-baseline, sizeof( buf ) );
     }
