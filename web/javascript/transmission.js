@@ -89,6 +89,7 @@ Transmission.prototype =
 		var ti = '#torrent_inspector_';
 		this._inspector = { };
 		this._inspector._info_tab = { };
+		this._inspector._info_tab.availability = $(ti+'availability')[0];
 		this._inspector._info_tab.comment = $(ti+'comment')[0];
 		this._inspector._info_tab.creator_date = $(ti+'creator_date')[0];
 		this._inspector._info_tab.creator = $(ti+'creator')[0];
@@ -1051,6 +1052,7 @@ Transmission.prototype =
 		var total_download = 0;
 		var total_download_peers = 0;
 		var total_download_speed = 0;
+		var total_availability = 0;
 		var total_have = 0;
 		var total_size = 0;
 		var total_state = null;
@@ -1075,6 +1077,7 @@ Transmission.prototype =
 			setInnerHTML( tab.upload_speed, na );
 			setInnerHTML( tab.uploaded, na );
 			setInnerHTML( tab.downloaded, na );
+			setInnerHTML( tab.availability, na );
 			setInnerHTML( tab.ratio, na );
 			setInnerHTML( tab.have, na );
 			setInnerHTML( tab.upload_to, na );
@@ -1126,6 +1129,7 @@ Transmission.prototype =
 			total_download_speed += t.downloadSpeed();
 			total_upload_peers   += t.peersGettingFromUs();
 			total_download_peers += t.peersSendingToUs();
+			total_availability   += t._sizeWhenDone - t._leftUntilDone + t._desiredAvailable;
 			if( total_state == null )
 				total_state = t.stateStr();
 			else if ( total_state.search ( t.stateStr() ) == -1 )
@@ -1150,6 +1154,7 @@ Transmission.prototype =
 		setInnerHTML( tab.upload_speed, torrents.length ? Math.formatBytes( total_upload_speed ) + '/s' : na );
 		setInnerHTML( tab.uploaded, torrents.length ? Math.formatBytes( total_upload ) : na );
 		setInnerHTML( tab.downloaded, torrents.length ? Math.formatBytes( total_download ) : na );
+		setInnerHTML( tab.availability, torrents.length ? Math.ratio( total_availability*100, sizeWhenDone ) + '%' : na );
 		setInnerHTML( tab.ratio, torrents.length ? Math.ratio( total_upload, total_download ) : na );
 		setInnerHTML( tab.have, torrents.length ? Math.formatBytes(total_completed) + ' (' + Math.formatBytes(total_verified) + ' verified)' : na );
 		setInnerHTML( tab.upload_to, torrents.length ? total_upload_peers : na );
