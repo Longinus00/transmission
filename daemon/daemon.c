@@ -95,6 +95,10 @@ static const struct tr_option options[] =
     { 'i', "bind-address-ipv4", "Where to listen for peer connections", "i", 1, "<ipv4 address>" },
     { 'I', "bind-address-ipv6", "Where to listen for peer connections", "I", 1, "<ipv6 address>" },
     { 'r', "rpc-bind-address", "Where to listen for RPC connections", "r", 1, "<ipv4 address>" },
+    { 's', "start-paused", "Start added torrents paused.", "s", 0, NULL },
+    { 'S', "start-unpaused", "Start added torrents unpaused", "S", 0, NULL },
+    { 'h', "trash", "Delete torrents after adding", "h", 0, NULL },
+    { 'H', "no-trash", "Don't delete torrents after adding", "H", 0, NULL },
     { 953, "global-seedratio", "All torrents, unless overridden by a per-torrent setting, should seed until a specific ratio", "gsr", 1, "ratio" },
     { 954, "no-global-seedratio", "All torrents, unless overridden by a per-torrent setting, should seed regardless of ratio", "GSR", 0, NULL },
     { 0, NULL, NULL, NULL, 0, NULL }
@@ -216,18 +220,34 @@ getConfigDir( int argc, const char ** argv )
 static void
 onFileAdded( tr_session * session, const char * dir, const char * file )
 {
-    if( strstr( file, ".torrent" ) != NULL )
+    char * filename = tr_buildPath( dir, file, NULL );
+    tr_ctor * ctor = tr_ctorNew( session );
+    int err = tr_ctorSetMetainfoFromFile( ctor, filename );
+
+    if( !err )
     {
-        char * filename = tr_buildPath( dir, file, NULL );
-        tr_ctor * ctor = tr_ctorNew( session );
+        tr_torrentNew( ctor, &err );
 
-        int err = tr_ctorSetMetainfoFromFile( ctor, filename );
-        if( !err )
-            tr_torrentNew( ctor, &err );
-
-        tr_ctorFree( ctor );
-        tr_free( filename );
+        if( err == TR_PARSE_ERR )
+            tr_err( "Error parsing .torrent file \"%s\"", file );
+        else
+        {
+            tr_bool trash = FALSE;
+            int test = tr_ctorGetDeleteSource( ctor, &trash );
+            
+            tr_inf( "Parsing .torrent file successful \"%s\"", file );
+            
+            if( !test && trash )
+            {
+                tr_inf( "Deleting input .torrent file \"%s\"", file );
+                if( remove( filename ) )
+                    tr_err( "Error deleting .torrent file: %s", tr_strerror( errno ) );
+            }
+        }
     }
+    
+    tr_ctorFree( ctor );
+    tr_free( filename );
 }
 
 static void
@@ -379,6 +399,14 @@ main( int argc, char ** argv )
                       break;
             case 'r':
                       tr_bencDictAddStr( &settings, TR_PREFS_KEY_RPC_BIND_ADDRESS, optarg );
+                      break;
+            case 's': tr_bencDictAddBool( &settings, TR_PREFS_KEY_START, FALSE );
+                      break;
+            case 'S': tr_bencDictAddBool( &settings, TR_PREFS_KEY_START, TRUE );
+                      break;
+            case 'h': tr_bencDictAddBool( &settings, TR_PREFS_KEY_TRASH_ORIGINAL, TRUE );
+                      break;
+            case 'H': tr_bencDictAddBool( &settings, TR_PREFS_KEY_TRASH_ORIGINAL, FALSE );
                       break;
 	    case 953:
 		      tr_bencDictAddReal( &settings, TR_PREFS_KEY_RATIO, atof(optarg) );
