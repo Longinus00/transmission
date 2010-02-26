@@ -40,7 +40,17 @@
 #define DEFAULT_HOST "localhost"
 #define DEFAULT_PORT atoi(TR_DEFAULT_RPC_PORT_STR)
 
-enum { TAG_SESSION, TAG_STATS, TAG_LIST, TAG_DETAILS, TAG_FILES, TAG_PEERS, TAG_PORTTEST };
+enum
+{
+    TAG_SESSION,
+    TAG_STATS,
+    TAG_LIST,
+    TAG_DETAILS,
+    TAG_FILES,
+    TAG_PEERS,
+    TAG_PORTTEST,
+    TAG_GETSESSION
+};
 
 static const char*
 getUsage( void )
@@ -158,6 +168,7 @@ static tr_bool debug = 0;
 static char * auth = NULL;
 static char * netrc = NULL;
 static char * sessionId = NULL;
+static tr_benc * sessionArgs = NULL;
 
 static char*
 tr_getcwd( void )
@@ -355,6 +366,7 @@ static const char * details_keys[] = {
     "uploadedEver",
     "uploadLimit",
     "uploadLimited",
+    "uploadRatio",
     "pieces",
     "webseeds",
     "webseedsSendingToUs"
@@ -371,6 +383,8 @@ static const char * list_keys[] = {
     "peersSendingToUs",
     "rateDownload",
     "rateUpload",
+    "seedRatioMode",
+    "seedRatioLimit",
     "sizeWhenDone",
     "status",
     "uploadRatio"
@@ -476,6 +490,9 @@ readargs( int argc, const char ** argv )
                 break;
 
             case 'i':
+                tr_bencDictAddStr( &top, "method", "session-get" );
+                tr_bencDictAddInt( &top, "tag", TAG_GETSESSION );
+                reqs[reqCount++] = tr_bencToStr( &top, TR_FMT_JSON_LEAN, NULL );
                 tr_bencDictAddStr( &top, "method", "torrent-get" );
                 tr_bencDictAddInt( &top, "tag", TAG_DETAILS );
                 addIdArg( args, id );
@@ -486,6 +503,9 @@ readargs( int argc, const char ** argv )
                 break;
 
             case 'l':
+                tr_bencDictAddStr( &top, "method", "session-get" );
+                tr_bencDictAddInt( &top, "tag", TAG_GETSESSION );
+                reqs[reqCount++] = tr_bencToStr( &top, TR_FMT_JSON_LEAN, NULL );
                 tr_bencDictAddStr( &top, "method", "torrent-get" );
                 tr_bencDictAddInt( &top, "tag", TAG_LIST );
                 n = TR_N_ELEMENTS( list_keys );
@@ -991,9 +1011,40 @@ getStatusString( tr_benc * t, char * buf, size_t buflen )
     }
     else switch( status )
     {
-        case TR_STATUS_STOPPED:
+        case TR_STATUS_STOPPED: {
+            int64_t seedRatioMode;
+            tr_bool checkFinished = FALSE;
+            double seedRatioLimit;
+            if( tr_bencDictFindInt( t, "seedRatioMode", &seedRatioMode ) )
+            {
+                tr_bool seedRatioLimited;
+                if ( seedRatioMode == TR_RATIOLIMIT_GLOBAL )
+                {
+                    if( tr_bencDictFindBool( sessionArgs, "seedRatioLimited", &seedRatioLimited )
+                        && seedRatioLimited
+                        && tr_bencDictFindReal( sessionArgs, "seedRatioLimit", &seedRatioLimit ) )
+                        checkFinished = TRUE;
+                }
+                else if ( tr_bencDictFindReal( t, "seedRatioLimit", &seedRatioLimit ) )
+                    checkFinished = TRUE;
+            }
+            if( checkFinished )
+            {
+                int64_t leftUntilDone;
+                double uploadRatio;
+                if( tr_bencDictFindInt( t, "leftUntilDone", &leftUntilDone ) 
+                    && tr_bencDictFindReal( t, "uploadRatio", &uploadRatio )
+                    && uploadRatio >= seedRatioLimit
+                    && leftUntilDone == 0 )
+                {
+                    tr_strlcpy( buf, "Finished", buflen );
+                    break;
+                }
+            }
             tr_strlcpy( buf, "Stopped", buflen );
+
             break;
+        }
 
         case TR_STATUS_CHECK_WAIT:
         case TR_STATUS_CHECK: {
@@ -1746,6 +1797,7 @@ processResponse( const char * host,
                  size_t       len )
 {
     tr_benc top;
+    tr_bool freeTop = TRUE;
     int status = EXIT_SUCCESS;
 
     if( debug )
@@ -1787,6 +1839,14 @@ processResponse( const char * host,
             case TAG_PORTTEST:
                 printPortTest( &top ); break;
 
+            case TAG_GETSESSION:
+                if( !sessionArgs )
+                {
+                    if( tr_bencDictFindDict( &top, "arguments", &sessionArgs ) )
+                        freeTop = FALSE;
+                }
+                break;
+
             default:
                 if( !tr_bencDictFindStr( &top, "result", &str ) )
                     status |= EXIT_FAILURE;
@@ -1797,7 +1857,8 @@ processResponse( const char * host,
                 }
         }
 
-        tr_bencFree( &top );
+        if( freeTop )
+            tr_bencFree( &top );
     }
 
     return status;
