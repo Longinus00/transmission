@@ -243,7 +243,12 @@ Torrent.prototype =
 		switch( this.state() ) {
 			case Torrent._StatusSeeding:        return 'Seeding';
 			case Torrent._StatusDownloading:    return 'Downloading';
-			case Torrent._StatusPaused:         return 'Paused';
+			case Torrent._StatusPaused:
+			{
+			    if( this.seedRatioLimit() <= this._upload_ratio && this._leftUntilDone == 0 )
+			        return 'Finished';
+			    return 'Paused';
+			}
 			case Torrent._StatusChecking:       return 'Verifying local data';
 			case Torrent._StatusWaitingToCheck: return 'Waiting to verify';
 			default:                            return 'error';
