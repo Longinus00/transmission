@@ -262,6 +262,33 @@ tr_ioRead( tr_torrent       * tor,
 }
 
 int
+tr_ioReadCheckPiece( tr_torrent       * tor,
+                     tr_piece_index_t   pieceIndex,
+                     uint32_t           begin,
+                     uint32_t           len,
+                     uint8_t          * buf )
+{
+    int ret = readOrWritePiece( tor, TR_IO_READ, pieceIndex, begin, buf, len );
+    if( !ret 
+        && tr_cpPieceIsComplete( &tor->completion, pieceIndex)
+        && !tr_torrentIsPieceChecked( tor, pieceIndex ) )
+    { 
+        const tr_bool ok = tr_ioTestPiece( tor, pieceIndex , NULL, 0);
+        if( !ok )
+        {
+            tor->pieceFailedHash = TRUE;
+            tr_torrentUncheck( tor );
+            tr_torrentSetLocalError( tor, "Torrent piece #%d failed hash check, needs reverify", pieceIndex );
+            tr_torerr( tor, "Torrent piece #%d failed hash check, needs reverify", pieceIndex );
+            ret = EIO;
+        }
+        else
+            tr_torrentSetPieceChecked( tor, pieceIndex, ok );
+    }
+    return ret;
+}
+
+int
 tr_ioPrefetch( tr_torrent       * tor,
                tr_piece_index_t   pieceIndex,
                uint32_t           begin,

@@ -267,6 +267,7 @@ verifyThreadFunc( void * unused UNUSED )
         {
             if( changed )
                 tr_torrentSetDirty( tor );
+            tor->pieceFailedHash = FALSE;
             fireCheckDone( tor, currentNode.verify_done_cb );
         }
     }
@@ -302,12 +303,7 @@ tr_verifyAdd( tr_torrent *      tor,
 {
     assert( tr_isTorrent( tor ) );
 
-    if( tr_torrentCountUncheckedPieces( tor ) == 0 )
-    {
-        /* doesn't need to be checked... */
-        fireCheckDone( tor, verify_done_cb );
-    }
-    else if( !torrentHasAnyLocalData( tor ) )
+    if( !torrentHasAnyLocalData( tor ) )
     {
         /* we haven't downloaded anything for this torrent yet...
          * no need to leave it waiting in the back of the queue.
@@ -321,6 +317,11 @@ tr_verifyAdd( tr_torrent *      tor,
         }
         if( hadAny ) /* if we thought we had some, flag as dirty */
             tr_torrentSetDirty( tor );
+        fireCheckDone( tor, verify_done_cb );
+    }
+    else if( tr_torrentCountUncheckedPieces( tor ) == 0 || !tor->pieceFailedHash )
+    {
+        /* doesn't need to be checked... */
         fireCheckDone( tor, verify_done_cb );
     }
     else

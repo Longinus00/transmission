@@ -611,6 +611,8 @@ torrentInit( tr_torrent * tor, const tr_ctor * ctor )
     static int nextUniqueId = 1;
     tr_session * session = tr_ctorGetSession( ctor );
 
+    tor->pieceFailedHash = FALSE;
+
     assert( session != NULL );
 
     tr_sessionLock( session );
@@ -1447,6 +1449,7 @@ verifyTorrent( void * vtor )
     /* add the torrent to the recheck queue */
     tor->preVerifyTotal = tr_cpHaveTotal( &tor->completion );
     tr_torrentUncheck( tor );
+    tor->pieceFailedHash = TRUE;
     tr_verifyAdd( tor, torrentRecheckDoneCB );
 
     tr_sessionUnlock( tor->session );

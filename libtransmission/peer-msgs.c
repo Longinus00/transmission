@@ -1924,7 +1924,7 @@ fillOutputBuffer( tr_peermsgs * msgs, time_t now )
             tr_peerIoWriteUint32( io, out, req.index );
             tr_peerIoWriteUint32( io, out, req.offset );
 
-            err = tr_ioRead( msgs->torrent, req.index, req.offset, req.length, EVBUFFER_DATA(out)+EVBUFFER_LENGTH(out) );
+            err = tr_ioReadCheckPiece( msgs->torrent, req.index, req.offset, req.length, EVBUFFER_DATA(out)+EVBUFFER_LENGTH(out) );
             if( err )
             {
                 if( fext )

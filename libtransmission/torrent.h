@@ -230,6 +230,7 @@ struct tr_torrent
     tr_bool                    needsSeedRatioCheck;
     tr_bool                    startAfterVerify;
     tr_bool                    isDirty;
+    tr_bool                    pieceFailedHash;
 
     uint16_t                   maxConnectedPeers;
 
