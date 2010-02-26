@@ -114,6 +114,10 @@ static tr_option opts[] =
     { 's', "start",                 "Start the current torrent(s)", "s",  0, NULL },
     { 'S', "stop",                  "Stop the current torrent(s)", "S",  0, NULL },
     { 't', "torrent",               "Set the current torrent(s)", "t",  1, "<torrent>" },
+    { 990, "start-paused",          "Start added torrents paused", 0, NULL },
+    { 991, "start-unpaused",        "Start added torrents unpaused", 0, NULL },
+    { 992, "trash",                 "Delete torrents after adding", 0, NULL },
+    { 993, "no-trash",              "Don't delete torrents after adding", 0, NULL },
     { 980, "torrent-downlimit",     "Set the maximum download speed for the current torrent(s) in KB/s", "td",  1, "<speed>" },
     { 981, "no-torrent-downlimit",  "Don't limit the download speed for the current torrent(s)", "TD",  0, NULL },
     { 982, "torrent-uplimit",       "Set the maximum upload speed for the current torrent(s) in KB/s", "tu",  1, "<speed>" },
@@ -797,6 +801,26 @@ readargs( int argc, const char ** argv )
                 tr_bencDictAddBool( args, "honorsSessionLimits", FALSE );
                 break;
 
+            case 990:
+                tr_bencDictAddStr( &top, "method", "session-set" );
+                tr_bencDictAddBool( args, TR_PREFS_KEY_START, FALSE );
+                break;
+            
+            case 991:
+                tr_bencDictAddStr( &top, "method", "session-set" );
+                tr_bencDictAddBool( args, TR_PREFS_KEY_START, TRUE );
+                break;
+
+            case 992:
+                tr_bencDictAddStr( &top, "method", "session-set" );
+                tr_bencDictAddBool( args, TR_PREFS_KEY_TRASH_ORIGINAL, TRUE );
+                break;
+            
+            case 993:
+                tr_bencDictAddStr( &top, "method", "session-set" );
+                tr_bencDictAddBool( args, TR_PREFS_KEY_TRASH_ORIGINAL, FALSE );
+                break;
+ 
             case TR_OPT_ERR:
                 fprintf( stderr, "invalid option\n" );
                 showUsage( );
@@ -1068,6 +1092,8 @@ printSession( tr_benc * top )
             printf( "  Peer exchange allowed: %s\n", ( boolVal ? "Yes" : "No" ) );
         if( tr_bencDictFindStr( args,  TR_PREFS_KEY_ENCRYPTION, &str ) )
             printf( "  Encryption: %s\n", str );
+        if( tr_bencDictFindBool( args, TR_PREFS_KEY_DHT_ENABLED, &boolVal ) )
+            printf( "  DHT enabled: %s\n", ( boolVal ? "Yes" : "No" ) );
         printf( "\n" );
 
         {
@@ -1138,6 +1164,13 @@ printSession( tr_benc * top )
                 }
             }
         }
+        printf( "\n" );
+        
+        printf( "MISC\n" );
+        if( tr_bencDictFindBool( args, TR_PREFS_KEY_START, &boolVal ) )
+            printf( "  Autostart added torrents: %s\n", ( boolVal ? "Yes" : "No" ) );
+        if( tr_bencDictFindBool( args, TR_PREFS_KEY_TRASH_ORIGINAL, &boolVal ) )
+            printf( "  Delete automatically added torrents: %s\n", ( boolVal ? "Yes" : "No" ) );
     }
 }
 
