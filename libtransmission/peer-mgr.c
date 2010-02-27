@@ -3073,7 +3073,7 @@ bandwidthPulse( int foo UNUSED, short bar UNUSED, void * vmgr )
         if( tor->isRunning && ( tor->error == TR_STAT_LOCAL_ERROR ))
             tr_torrentStop( tor );
 
-    /* slowly run verify on completed torrents that havn't passed the mtime test */
+    /* slowly run verify on completed torrents that haven't passed the mtime test */
     if( !tr_verifyInProgress() )
     {
         tor = NULL;

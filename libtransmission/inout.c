@@ -269,8 +269,8 @@ tr_ioReadCheckPiece( tr_torrent       * tor,
                      uint8_t          * buf )
 {
     int ret = readOrWritePiece( tor, TR_IO_READ, pieceIndex, begin, buf, len );
-    if( !ret 
-        && tor->failedTimeCheck
+    if( tor->failedTimeCheck
+        && !ret
         && tr_cpPieceIsComplete( &tor->completion, pieceIndex )
         && !tr_torrentIsPieceChecked( tor, pieceIndex ) )
     { 
