@@ -270,10 +270,10 @@ tr_ioReadCheckPiece( tr_torrent       * tor,
 {
     int ret = readOrWritePiece( tor, TR_IO_READ, pieceIndex, begin, buf, len );
     if( !ret 
-        && tr_cpPieceIsComplete( &tor->completion, pieceIndex)
+        && tr_cpPieceIsComplete( &tor->completion, pieceIndex )
         && !tr_torrentIsPieceChecked( tor, pieceIndex ) )
     { 
-        const tr_bool ok = tr_ioTestPiece( tor, pieceIndex , NULL, 0);
+        const tr_bool ok = tr_ioTestPiece( tor, pieceIndex );
         if( !ok )
         {
             tor->pieceFailedHash = TRUE;
