@@ -1297,6 +1297,14 @@ prefschanged( TrCore * core UNUSED,
     {
         tr_sessionSetIncompleteDirEnabled( tr, pref_flag_get( key ) );
     }
+    else if( !strcmp( key, TR_PREFS_KEY_START) )
+    {
+        tr_sessionSetPaused( tr, !pref_flag_get( key ) ); 
+    }
+    else if( !strcmp( key, TR_PREFS_KEY_TRASH_ORIGINAL ) )
+    {
+        tr_sessionSetDeleteSource( tr, pref_flag_get( key ) );
+    }
 }
 
 static gboolean
