@@ -267,7 +267,11 @@ verifyThreadFunc( void * unused UNUSED )
         {
             if( changed )
                 tr_torrentSetDirty( tor );
-            tor->pieceFailedHash = FALSE;
+            if( tr_torrentCountUncheckedPieces( tor ) == 0 )
+            {
+                tor->pieceFailedHash = FALSE;
+                tor->failedTimeCheck = FALSE;
+            }
             fireCheckDone( tor, currentNode.verify_done_cb );
         }
     }
@@ -276,8 +280,8 @@ verifyThreadFunc( void * unused UNUSED )
     tr_lockUnlock( getVerifyLock( ) );
 }
 
-static tr_bool
-torrentHasAnyLocalData( const tr_torrent * tor )
+tr_bool
+tr_torrentHasAnyLocalData( const tr_torrent * tor )
 {
     tr_file_index_t i;
     tr_bool hasAny = FALSE;
@@ -303,7 +307,7 @@ tr_verifyAdd( tr_torrent *      tor,
 {
     assert( tr_isTorrent( tor ) );
 
-    if( !torrentHasAnyLocalData( tor ) )
+    if( !tr_torrentHasAnyLocalData( tor ) )
     {
         /* we haven't downloaded anything for this torrent yet...
          * no need to leave it waiting in the back of the queue.
@@ -354,7 +358,7 @@ compareVerifyByTorrent( const void * va,
 }
 
 tr_bool
-tr_verifyInProgress( const tr_torrent * tor )
+tr_verifyInProgressTorrent( const tr_torrent * tor )
 {
     tr_bool found = FALSE;
     tr_lock * lock = getVerifyLock( );
@@ -367,6 +371,12 @@ tr_verifyInProgress( const tr_torrent * tor )
 
     tr_lockUnlock( lock );
     return found;
+}
+
+tr_bool
+tr_verifyInProgress( void )
+{
+    return verifyThread != NULL; 
 }
 
 void

@@ -231,6 +231,7 @@ struct tr_torrent
     tr_bool                    startAfterVerify;
     tr_bool                    isDirty;
     tr_bool                    pieceFailedHash;
+    tr_bool                    failedTimeCheck;
 
     uint16_t                   maxConnectedPeers;
 

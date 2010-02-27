@@ -612,6 +612,7 @@ torrentInit( tr_torrent * tor, const tr_ctor * ctor )
     tr_session * session = tr_ctorGetSession( ctor );
 
     tor->pieceFailedHash = FALSE;
+    tor->failedTimeCheck = FALSE;
 
     assert( session != NULL );
 
@@ -657,6 +658,9 @@ torrentInit( tr_torrent * tor, const tr_ctor * ctor )
     torrentInitFromInfo( tor );
     loaded = tr_torrentLoadResume( tor, ~0, ctor );
     tor->completeness = tr_cpGetStatus( &tor->completion );
+
+    if( tr_torrentCountUncheckedPieces( tor ) > 0 && tr_torrentHasAnyLocalData( tor ) )
+        tor->failedTimeCheck = TRUE;
 
     refreshCurrentDir( tor );
 
