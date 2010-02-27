@@ -40,7 +40,17 @@
 #define DEFAULT_HOST "localhost"
 #define DEFAULT_PORT atoi(TR_DEFAULT_RPC_PORT_STR)
 
-enum { TAG_SESSION, TAG_STATS, TAG_LIST, TAG_DETAILS, TAG_FILES, TAG_PEERS, TAG_PORTTEST };
+enum
+{
+    TAG_SESSION,
+    TAG_STATS,
+    TAG_LIST,
+    TAG_DETAILS,
+    TAG_FILES,
+    TAG_PEERS,
+    TAG_PORTTEST,
+    TAG_GETSESSION
+};
 
 static const char*
 getUsage( void )
@@ -114,6 +124,10 @@ static tr_option opts[] =
     { 's', "start",                 "Start the current torrent(s)", "s",  0, NULL },
     { 'S', "stop",                  "Stop the current torrent(s)", "S",  0, NULL },
     { 't', "torrent",               "Set the current torrent(s)", "t",  1, "<torrent>" },
+    { 990, "start-paused",          "Start added torrents paused", 0, NULL },
+    { 991, "start-unpaused",        "Start added torrents unpaused", 0, NULL },
+    { 992, "trash",                 "Delete torrents after adding", 0, NULL },
+    { 993, "no-trash",              "Don't delete torrents after adding", 0, NULL },
     { 980, "torrent-downlimit",     "Set the maximum download speed for the current torrent(s) in KB/s", "td",  1, "<speed>" },
     { 981, "no-torrent-downlimit",  "Don't limit the download speed for the current torrent(s)", "TD",  0, NULL },
     { 982, "torrent-uplimit",       "Set the maximum upload speed for the current torrent(s) in KB/s", "tu",  1, "<speed>" },
@@ -158,6 +172,7 @@ static tr_bool debug = 0;
 static char * auth = NULL;
 static char * netrc = NULL;
 static char * sessionId = NULL;
+static tr_benc * sessionArgs = NULL;
 
 static char*
 tr_getcwd( void )
@@ -320,6 +335,7 @@ static const char * details_keys[] = {
     "corruptEver",
     "creator",
     "dateCreated",
+    "desiredAvailable",
     "doneDate",
     "downloadDir",
     "downloadedEver",
@@ -355,6 +371,7 @@ static const char * details_keys[] = {
     "uploadedEver",
     "uploadLimit",
     "uploadLimited",
+    "uploadRatio",
     "pieces",
     "webseeds",
     "webseedsSendingToUs"
@@ -371,6 +388,8 @@ static const char * list_keys[] = {
     "peersSendingToUs",
     "rateDownload",
     "rateUpload",
+    "seedRatioMode",
+    "seedRatioLimit",
     "sizeWhenDone",
     "status",
     "uploadRatio"
@@ -476,6 +495,9 @@ readargs( int argc, const char ** argv )
                 break;
 
             case 'i':
+                tr_bencDictAddStr( &top, "method", "session-get" );
+                tr_bencDictAddInt( &top, "tag", TAG_GETSESSION );
+                reqs[reqCount++] = tr_bencToStr( &top, TR_FMT_JSON_LEAN, NULL );
                 tr_bencDictAddStr( &top, "method", "torrent-get" );
                 tr_bencDictAddInt( &top, "tag", TAG_DETAILS );
                 addIdArg( args, id );
@@ -486,6 +508,9 @@ readargs( int argc, const char ** argv )
                 break;
 
             case 'l':
+                tr_bencDictAddStr( &top, "method", "session-get" );
+                tr_bencDictAddInt( &top, "tag", TAG_GETSESSION );
+                reqs[reqCount++] = tr_bencToStr( &top, TR_FMT_JSON_LEAN, NULL );
                 tr_bencDictAddStr( &top, "method", "torrent-get" );
                 tr_bencDictAddInt( &top, "tag", TAG_LIST );
                 n = TR_N_ELEMENTS( list_keys );
@@ -797,6 +822,26 @@ readargs( int argc, const char ** argv )
                 tr_bencDictAddBool( args, "honorsSessionLimits", FALSE );
                 break;
 
+            case 990:
+                tr_bencDictAddStr( &top, "method", "session-set" );
+                tr_bencDictAddBool( args, TR_PREFS_KEY_START, FALSE );
+                break;
+            
+            case 991:
+                tr_bencDictAddStr( &top, "method", "session-set" );
+                tr_bencDictAddBool( args, TR_PREFS_KEY_START, TRUE );
+                break;
+
+            case 992:
+                tr_bencDictAddStr( &top, "method", "session-set" );
+                tr_bencDictAddBool( args, TR_PREFS_KEY_TRASH_ORIGINAL, TRUE );
+                break;
+            
+            case 993:
+                tr_bencDictAddStr( &top, "method", "session-set" );
+                tr_bencDictAddBool( args, TR_PREFS_KEY_TRASH_ORIGINAL, FALSE );
+                break;
+ 
             case TR_OPT_ERR:
                 fprintf( stderr, "invalid option\n" );
                 showUsage( );
@@ -991,9 +1036,40 @@ getStatusString( tr_benc * t, char * buf, size_t buflen )
     }
     else switch( status )
     {
-        case TR_STATUS_STOPPED:
+        case TR_STATUS_STOPPED: {
+            int64_t seedRatioMode;
+            tr_bool checkFinished = FALSE;
+            double seedRatioLimit;
+            if( tr_bencDictFindInt( t, "seedRatioMode", &seedRatioMode ) )
+            {
+                tr_bool seedRatioLimited;
+                if ( seedRatioMode == TR_RATIOLIMIT_GLOBAL )
+                {
+                    if( tr_bencDictFindBool( sessionArgs, "seedRatioLimited", &seedRatioLimited )
+                        && seedRatioLimited
+                        && tr_bencDictFindReal( sessionArgs, "seedRatioLimit", &seedRatioLimit ) )
+                        checkFinished = TRUE;
+                }
+                else if ( tr_bencDictFindReal( t, "seedRatioLimit", &seedRatioLimit ) )
+                    checkFinished = TRUE;
+            }
+            if( checkFinished )
+            {
+                int64_t leftUntilDone;
+                double uploadRatio;
+                if( tr_bencDictFindInt( t, "leftUntilDone", &leftUntilDone ) 
+                    && tr_bencDictFindReal( t, "uploadRatio", &uploadRatio )
+                    && uploadRatio >= seedRatioLimit
+                    && leftUntilDone == 0 )
+                {
+                    tr_strlcpy( buf, "Finished", buflen );
+                    break;
+                }
+            }
             tr_strlcpy( buf, "Stopped", buflen );
+
             break;
+        }
 
         case TR_STATUS_CHECK_WAIT:
         case TR_STATUS_CHECK: {
@@ -1068,6 +1144,8 @@ printSession( tr_benc * top )
             printf( "  Peer exchange allowed: %s\n", ( boolVal ? "Yes" : "No" ) );
         if( tr_bencDictFindStr( args,  TR_PREFS_KEY_ENCRYPTION, &str ) )
             printf( "  Encryption: %s\n", str );
+        if( tr_bencDictFindBool( args, TR_PREFS_KEY_DHT_ENABLED, &boolVal ) )
+            printf( "  DHT enabled: %s\n", ( boolVal ? "Yes" : "No" ) );
         printf( "\n" );
 
         {
@@ -1138,6 +1216,13 @@ printSession( tr_benc * top )
                 }
             }
         }
+        printf( "\n" );
+        
+        printf( "MISC\n" );
+        if( tr_bencDictFindBool( args, TR_PREFS_KEY_START, &boolVal ) )
+            printf( "  Autostart added torrents: %s\n", ( boolVal ? "Yes" : "No" ) );
+        if( tr_bencDictFindBool( args, TR_PREFS_KEY_TRASH_ORIGINAL, &boolVal ) )
+            printf( "  Delete automatically added torrents: %s\n", ( boolVal ? "Yes" : "No" ) );
     }
 }
 
@@ -1238,12 +1323,22 @@ printDetails( tr_benc * top )
                 printf( "  Have: %s (%s verified)\n", buf, buf2 );
             }
 
-            if( tr_bencDictFindInt( t, "sizeWhenDone", &i )
-              && tr_bencDictFindInt( t, "totalSize", &j ) )
+            if( tr_bencDictFindInt( t, "sizeWhenDone", &i ) )
             {
-                strlsize( buf, j, sizeof( buf ) );
-                strlsize( buf2, i, sizeof( buf2 ) );
-                printf( "  Total size: %s (%s wanted)\n", buf, buf2 );
+                if( i < 1 )
+                    printf( "  Availability: None\n" );
+                if( tr_bencDictFindInt( t, "desiredAvailable", &j) 
+                    && tr_bencDictFindInt( t, "leftUntilDone", &k) )
+                {
+                    j += i - k;
+                    printf( "  Availability: %.1f%%\n", ( 100 * j ) / (double) i );
+                }
+                if( tr_bencDictFindInt( t, "totalSize", &j ) )
+                {
+                    strlsize( buf2, i, sizeof( buf2 ) );
+                    strlsize( buf, j, sizeof( buf ) );
+                    printf( "  Total size: %s (%s wanted)\n", buf, buf2 );
+                }
             }
             if( tr_bencDictFindInt( t, "downloadedEver", &i )
               && tr_bencDictFindInt( t, "uploadedEver", &j ) )
@@ -1750,6 +1845,7 @@ processResponse( const char * host,
                  size_t       len )
 {
     tr_benc top;
+    tr_bool freeTop = TRUE;
     int status = EXIT_SUCCESS;
 
     if( debug )
@@ -1791,6 +1887,14 @@ processResponse( const char * host,
             case TAG_PORTTEST:
                 printPortTest( &top ); break;
 
+            case TAG_GETSESSION:
+                if( !sessionArgs )
+                {
+                    if( tr_bencDictFindDict( &top, "arguments", &sessionArgs ) )
+                        freeTop = FALSE;
+                }
+                break;
+
             default:
                 if( !tr_bencDictFindStr( &top, "result", &str ) )
                     status |= EXIT_FAILURE;
@@ -1801,7 +1905,8 @@ processResponse( const char * host,
                 }
         }
 
-        tr_bencFree( &top );
+        if( freeTop )
+            tr_bencFree( &top );
     }
 
     return status;

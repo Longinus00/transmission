@@ -41,7 +41,7 @@ Torrent._MetaDataFields = [ 'addedDate', 'comment', 'creator', 'dateCreated',
 Torrent._DynamicFields = [ 'downloadedEver', 'error', 'errorString', 'eta',
     'haveUnchecked', 'haveValid', 'leftUntilDone', 'metadataPercentComplete', 'peersConnected',
     'peersGettingFromUs', 'peersSendingToUs', 'rateDownload', 'rateUpload',
-    'recheckProgress', 'sizeWhenDone', 'status', 'trackerStats',
+    'recheckProgress', 'sizeWhenDone', 'status', 'trackerStats', 'desiredAvailable',
     'uploadedEver', 'uploadRatio', 'seedRatioLimit', 'seedRatioMode', 'downloadDir' ]
 
 Torrent.prototype =
@@ -243,7 +243,12 @@ Torrent.prototype =
 		switch( this.state() ) {
 			case Torrent._StatusSeeding:        return 'Seeding';
 			case Torrent._StatusDownloading:    return 'Downloading';
-			case Torrent._StatusPaused:         return 'Paused';
+			case Torrent._StatusPaused:
+			{
+			    if( this.seedRatioLimit() <= this._upload_ratio && this._leftUntilDone == 0 )
+			        return 'Finished';
+			    return 'Paused';
+			}
 			case Torrent._StatusChecking:       return 'Verifying local data';
 			case Torrent._StatusWaitingToCheck: return 'Waiting to verify';
 			default:                            return 'error';
@@ -391,6 +396,7 @@ Torrent.prototype =
 		this._state                   = data.status;
 		this._download_dir            = data.downloadDir;
 		this._metadataPercentComplete = data.metadataPercentComplete;
+		this._desiredAvailable        = data.desiredAvailable;
 
 		if (data.fileStats)
 			this.refreshFileModel( data );
