@@ -557,12 +557,12 @@ Torrent.prototype =
 			c += ', uploaded ';
 			c += Math.formatBytes( this._upload_total );
 			c += ' (Ratio ';
-            if(this._upload_ratio > -1)
-			    c += Math.round(this._upload_ratio*100)/100;
-            else if(this._upload_ratio == -2)
-                c += 'Inf';
-            else
-                c += '0';
+			if(this._upload_ratio > -1)
+				c += Math.round(this._upload_ratio*100)/100;
+			else if(this._upload_ratio == -2)
+				c += 'Inf';
+			else
+				c += '0';
 			c += ')';
 			progress_details = c;
 
