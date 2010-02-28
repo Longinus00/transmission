@@ -255,8 +255,8 @@ verifyThreadFunc( void * unused UNUSED )
     tr_lockUnlock( getVerifyLock( ) );
 }
 
-tr_bool
-tr_torrentHasAnyLocalData( const tr_torrent * tor )
+static tr_bool
+torrentHasAnyLocalData( const tr_torrent * tor )
 {
     tr_file_index_t i;
     tr_bool hasAny = FALSE;
@@ -276,13 +276,19 @@ tr_torrentHasAnyLocalData( const tr_torrent * tor )
     return hasAny;
 }
 
+tr_bool
+tr_torrentHasAnyLocalData( const tr_torrent * tor )
+{
+    return torrentHasAnyLocalData( tor );
+}
+
 void
 tr_verifyAdd( tr_torrent *      tor,
               tr_verify_done_cb verify_done_cb )
 {
     assert( tr_isTorrent( tor ) );
 
-    if( !tr_torrentHasAnyLocalData( tor ) )
+    if( !torrentHasAnyLocalData( tor ) )
     {
         /* we haven't downloaded anything for this torrent yet...
          * no need to leave it waiting in the back of the queue.
