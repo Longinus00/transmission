@@ -245,7 +245,7 @@ Torrent.prototype =
 			case Torrent._StatusDownloading:    return 'Downloading';
 			case Torrent._StatusPaused:
 			{
-			    if( this.seedRatioLimit() <= this._upload_ratio && this._leftUntilDone == 0 )
+			    if( this._upload_ratio != -1 && this.seedRatioLimit() <= this._upload_ratio && this._leftUntilDone == 0 )
 			        return 'Finished';
 			    return 'Paused';
 			}
