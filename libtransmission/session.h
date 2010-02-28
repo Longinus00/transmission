@@ -177,6 +177,7 @@ struct tr_session
 
     struct event               * nowTimer;
     struct event               * saveTimer;
+    struct event               * verifyTimer;
 
     /* monitors the "global pool" speeds */
     struct tr_bandwidth        * bandwidth;

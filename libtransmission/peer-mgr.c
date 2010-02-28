@@ -36,7 +36,6 @@
 #include "torrent.h"
 #include "utils.h"
 #include "webseed.h"
-#include "verify.h"
 
 enum
 {
@@ -3072,23 +3071,6 @@ bandwidthPulse( int foo UNUSED, short bar UNUSED, void * vmgr )
     while(( tor = tr_torrentNext( mgr->session, tor )))
         if( tor->isRunning && ( tor->error == TR_STAT_LOCAL_ERROR ))
             tr_torrentStop( tor );
-
-    /* slowly run verify on completed torrents that haven't passed the mtime test */
-    if( !tr_verifyInProgress() )
-    {
-        tor = NULL;
-        while(( tor = tr_torrentNext( mgr->session, tor )))
-        {
-            if( tor->failedTimeCheck
-                && tor->error != TR_STAT_LOCAL_ERROR
-                && tr_torrentGetActivity( tor ) != TR_STATUS_DOWNLOAD )
-            {
-                tr_torinf( tor, "Queueing suspect torrent for verify" );
-                tr_torrentVerify( tor );
-                break;
-            }
-        }
-    }
 
     tr_timerAddMsec( mgr->bandwidthTimer, BANDWIDTH_PERIOD_MSEC );
     managerUnlock( mgr );

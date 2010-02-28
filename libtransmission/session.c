@@ -52,6 +52,10 @@ enum
 {
     SAVE_INTERVAL_SECS = 120
 };
+enum
+{
+    VERIFY_INTERVAL_MSECS = 5000
+};
 
 
 #define dbgmsg( ... ) \
@@ -464,6 +468,37 @@ onSaveTimer( int foo UNUSED, short bar UNUSED, void * vsession )
     tr_timerAdd( session->saveTimer, SAVE_INTERVAL_SECS, 0 );
 }
 
+/**
+ * Periodically scan through the torrent list and verify finished 
+ * torrents that failed the mtime check at loading. Only queue
+ * torrents for checking if no other torrent is currently checking
+ * to ensure as many torrents can seed as possible.
+ */
+static void
+onVerifyTimer( int foo UNUSED, short bar UNUSED, void *vsession )
+{
+    tr_torrent * tor = NULL;
+    tr_session * session = vsession;
+
+    if( !tr_verifyInProgress() )
+    {
+        while(( tor = tr_torrentNext( session, tor ) ))
+        {
+            if( tor->failedTimeCheck
+                && tor->error != TR_STAT_LOCAL_ERROR
+                && tr_torrentGetActivity( tor ) != TR_STATUS_DOWNLOAD )
+            {
+                tr_torinf( tor, "Queueing suspect torrent for verify" );
+                tr_torrentVerify( tor );
+                break;
+            }
+        }
+    }
+
+    tr_timerAddMsec( session->verifyTimer, VERIFY_INTERVAL_MSECS );
+}
+
+
 /***
 ****
 ***/
@@ -604,6 +639,10 @@ tr_sessionInitImpl( void * vdata )
     session->saveTimer = tr_new0( struct event, 1 );
     evtimer_set( session->saveTimer, onSaveTimer, session );
     tr_timerAdd( session->saveTimer, SAVE_INTERVAL_SECS, 0 );
+
+    session->verifyTimer = tr_new0( struct event, 1 );
+    evtimer_set( session->verifyTimer, onVerifyTimer, session );
+    tr_timerAddMsec( session->verifyTimer, VERIFY_INTERVAL_MSECS );
 
     tr_announcerInit( session );
 
