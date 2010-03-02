@@ -659,7 +659,7 @@ torrentInit( tr_torrent * tor, const tr_ctor * ctor )
     loaded = tr_torrentLoadResume( tor, ~0, ctor );
     tor->completeness = tr_cpGetStatus( &tor->completion );
 
-    if( tr_torrentCountUncheckedPieces( tor ) > 0 && tr_torrentHasAnyLocalData( tor ) )
+    if( tr_torrentCountUncheckedPieces( tor ) != 0 && tr_torrentHasAnyLocalData( tor ) )
         tor->failedTimeCheck = TRUE;
 
     refreshCurrentDir( tor );
@@ -1454,7 +1454,8 @@ verifyTorrent( void * vtor )
     /* add the torrent to the recheck queue */
     tor->preVerifyTotal = tr_cpHaveTotal( &tor->completion );
     tr_torrentUncheck( tor );
-    tor->pieceFailedHash = TRUE;
+    if( tor->failedTimeCheck )
+        tor->pieceFailedHash = TRUE;
     tr_verifyAdd( tor, torrentRecheckDoneCB );
 
     tr_sessionUnlock( tor->session );
