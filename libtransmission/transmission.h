@@ -1793,6 +1793,9 @@ typedef struct tr_stat
 
     /** The last time we uploaded or downloaded piece data on this torrent. */
     time_t    activityDate;
+
+    /** Has the torrent has been modified since it was last seen by transmission */
+    tr_bool   failedTimeCheck;
 }
 tr_stat;
 
