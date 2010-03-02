@@ -54,7 +54,7 @@ enum
 };
 enum
 {
-    VERIFY_INTERVAL_MSECS = 5000
+    VERIFY_INTERVAL_SECS = 5
 };
 
 
@@ -495,7 +495,7 @@ onVerifyTimer( int foo UNUSED, short bar UNUSED, void *vsession )
         }
     }
 
-    tr_timerAddMsec( session->verifyTimer, VERIFY_INTERVAL_MSECS );
+    tr_timerAdd( session->verifyTimer, VERIFY_INTERVAL_SECS, 0 );
 }
 
 
@@ -642,7 +642,7 @@ tr_sessionInitImpl( void * vdata )
 
     session->verifyTimer = tr_new0( struct event, 1 );
     evtimer_set( session->verifyTimer, onVerifyTimer, session );
-    tr_timerAddMsec( session->verifyTimer, VERIFY_INTERVAL_MSECS );
+    tr_timerAdd( session->verifyTimer, VERIFY_INTERVAL_SECS, 0 );
 
     tr_announcerInit( session );
 
