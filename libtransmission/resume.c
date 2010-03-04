@@ -435,6 +435,7 @@ loadProgress( tr_benc *    dict,
                         "File #%zu needs to be verified - couldn't find benc entry",
                         i );
                     tr_torrentSetFileChecked( tor, i, FALSE );
+                    tor->failedTimeCheck = TRUE;
                 }
                 else
                 {
@@ -448,6 +449,7 @@ loadProgress( tr_benc *    dict,
                             "File #%zu needs to be verified - times %lu and %lu don't match",
                             i, t, curMTimes[i] );
                         tr_torrentSetFileChecked( tor, i, FALSE );
+                        tor->failedTimeCheck = TRUE;
                     }
                 }
             }
@@ -457,6 +459,7 @@ loadProgress( tr_benc *    dict,
             tr_torrentUncheck( tor );
             tr_tordbg(
                 tor, "Torrent needs to be verified - unable to find mtimes" );
+            tor->failedTimeCheck = TRUE;
         }
 
         if( tr_bencDictFindRaw( p, KEY_PROGRESS_BITFIELD, &raw, &rawlen ) )
@@ -471,6 +474,7 @@ loadProgress( tr_benc *    dict,
                 tr_tordbg(
                     tor,
                     "Torrent needs to be verified - error loading bitfield" );
+                tor->failedTimeCheck = TRUE;
             }
         }
         else
@@ -479,6 +483,7 @@ loadProgress( tr_benc *    dict,
             tr_tordbg(
                 tor,
                 "Torrent needs to be verified - unable to find bitfield" );
+            tor->failedTimeCheck = TRUE;
         }
 
         tr_free( curMTimes );
