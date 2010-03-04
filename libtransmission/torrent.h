@@ -232,6 +232,7 @@ struct tr_torrent
     tr_bool                    isDirty;
     tr_bool                    pieceFailedHash;
     tr_bool                    failedTimeCheck;
+    tr_bool                    lostAllFiles;
 
     uint16_t                   maxConnectedPeers;
 
@@ -250,8 +251,6 @@ struct tr_torrent
 
     double                     desiredRatio;
     tr_ratiolimit              ratioLimitMode;
-
-    uint64_t                   preVerifyTotal;
 };
 
 /* get the index of this piece's first block */

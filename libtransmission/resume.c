@@ -505,6 +505,8 @@ tr_torrentSaveResume( const tr_torrent * tor )
 
     if( !tr_isTorrent( tor ) )
         return;
+    if( tor->lostAllFiles )
+        return;
 
     tr_tordbg( tor, "Saving .resume file for \"%s\"", tr_torrentName( tor ) );
 

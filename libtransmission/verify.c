@@ -288,13 +288,7 @@ tr_verifyAdd( tr_torrent *      tor,
 {
     assert( tr_isTorrent( tor ) );
 
-    if( tr_torrentCountUncheckedPieces( tor ) == 0 
-        || ( tor->failedTimeCheck && !tor->pieceFailedHash ) )
-    {
-        /* doesn't need to be checked... */
-        fireCheckDone( tor, verify_done_cb );
-    }
-    else if( !torrentHasAnyLocalData( tor ) )
+    if( !torrentHasAnyLocalData( tor ) )
     {
         /* we haven't downloaded anything for this torrent yet...
          * no need to leave it waiting in the back of the queue.
@@ -302,12 +296,31 @@ tr_verifyAdd( tr_torrent *      tor,
          * the "done" callback */
         const tr_bool hadAny = tr_cpHaveTotal( &tor->completion ) != 0;
         tr_piece_index_t i;
-        for( i=0; i<tor->info.pieceCount; ++i ) {
-            tr_torrentSetHasPiece( tor, i, FALSE );
-            tr_torrentSetPieceChecked( tor, i, TRUE );
+
+        if( hadAny ){
+            if( tor->lostAllFiles ){
+                tr_torinf( tor, "Reseting local data" );
+                for( i=0; i<tor->info.pieceCount; ++i ) {
+                    tr_torrentSetHasPiece( tor, i, FALSE );
+                    tr_torrentSetPieceChecked( tor, i, TRUE );
+                }
+                tor->lostAllFiles = FALSE;
+                tr_torrentSetDirty( tor );
+            }
+            else {
+                tr_torerr( tor, "Can't find local data" );
+                tor->lostAllFiles = TRUE;
+            }
         }
-        if( hadAny ) /* if we thought we had some, flag as dirty */
-            tr_torrentSetDirty( tor );
+        else
+            tr_torrentUncheck( tor );
+
+        fireCheckDone( tor, verify_done_cb );
+    }
+    else if( tr_torrentCountUncheckedPieces( tor ) == 0 
+        || ( tor->failedTimeCheck && !tor->pieceFailedHash ) )
+    {
+        /* doesn't need to be checked... */
         fireCheckDone( tor, verify_done_cb );
     }
     else
