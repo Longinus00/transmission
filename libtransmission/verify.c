@@ -295,10 +295,10 @@ tr_verifyAdd( tr_torrent *      tor,
          * we can mark it as all-missing from here and fire
          * the "done" callback */
         const tr_bool hadAny = tr_cpHaveTotal( &tor->completion ) != 0;
-        tr_piece_index_t i;
 
         if( hadAny ){
             if( tor->lostAllFiles ){
+                tr_piece_index_t i;
                 tr_torinf( tor, "Reseting local data" );
                 for( i=0; i<tor->info.pieceCount; ++i ) {
                     tr_torrentSetHasPiece( tor, i, FALSE );
