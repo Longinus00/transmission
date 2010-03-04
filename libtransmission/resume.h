@@ -45,6 +45,8 @@ uint64_t tr_torrentLoadResume( tr_torrent *    tor,
                                uint64_t        fieldsToLoad,
                                const tr_ctor * ctor );
 
+uint64_t tr_torrentLoadProgress( tr_torrent * tor );
+
 void     tr_torrentSaveResume( const tr_torrent * tor );
 
 void     tr_torrentRemoveResume( const tr_torrent * tor );

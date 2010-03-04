@@ -540,6 +540,30 @@ tr_torrentSaveResume( const tr_torrent * tor )
     tr_bencFree( &top );
 }
 
+static int
+loadBencFromFile( tr_torrent * tor,
+                  tr_benc    * top)
+{
+    char * filename;
+
+    assert( tr_isTorrent( tor ) );
+
+    filename = getResumeFilename( tor );
+
+    if( tr_bencLoadFile( top, TR_FMT_BENC, filename ) )
+    {
+        tr_tordbg( tor, "Couldn't read \"%s\"", filename );
+
+        tr_free( filename );
+        return 1;
+    }
+
+    tr_tordbg( tor, "Read resume file \"%s\"", filename );
+
+    tr_free( filename );
+    return 0;
+}
+
 static uint64_t
 loadFromFile( tr_torrent * tor,
               uint64_t     fieldsToLoad )
@@ -547,24 +571,14 @@ loadFromFile( tr_torrent * tor,
     int64_t  i;
     const char * str;
     uint64_t fieldsLoaded = 0;
-    char * filename;
     tr_benc top;
     tr_bool boolVal;
     const tr_bool  wasDirty = tor->isDirty;
 
     assert( tr_isTorrent( tor ) );
 
-    filename = getResumeFilename( tor );
-
-    if( tr_bencLoadFile( &top, TR_FMT_BENC, filename ) )
-    {
-        tr_tordbg( tor, "Couldn't read \"%s\"", filename );
-
-        tr_free( filename );
-        return fieldsLoaded;
-    }
-
-    tr_tordbg( tor, "Read resume file \"%s\"", filename );
+    if( !loadBencFromFile( tor, &top ) )
+        return fieldsToLoad;
 
     if( ( fieldsToLoad & TR_FR_CORRUPT )
       && tr_bencDictFindInt( &top, KEY_CORRUPT, &i ) )
@@ -672,7 +686,6 @@ loadFromFile( tr_torrent * tor,
     tor->isDirty = wasDirty;
 
     tr_bencFree( &top );
-    tr_free( filename );
     return fieldsLoaded;
 }
 
@@ -744,6 +757,19 @@ tr_torrentLoadResume( tr_torrent *    tor,
     ret |= useFallbackFields( tor, fieldsToLoad, ctor );
 
     return ret;
+}
+
+uint64_t
+tr_torrentLoadProgress( tr_torrent * tor )
+{
+    tr_benc top;
+    
+    assert( tr_isTorrent( tor ) );
+
+    if( !loadBencFromFile( tor, &top ) )
+        return 0;
+
+    return loadProgress( &top, tor );
 }
 
 void

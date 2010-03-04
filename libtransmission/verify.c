@@ -28,6 +28,7 @@
 #include "inout.h"
 #include "list.h"
 #include "platform.h"
+#include "resume.h" /* tr_torrentLoadProgress */
 #include "torrent.h"
 #include "utils.h" /* tr_buildPath */
 #include "verify.h"
@@ -299,11 +300,12 @@ tr_verifyAdd( tr_torrent *      tor,
         if( hadAny ){
             if( tor->lostAllFiles ){
                 tr_piece_index_t i;
-                tr_torinf( tor, "Reseting local data" );
+                tr_torinf( tor, "Reseting progress" );
                 for( i=0; i<tor->info.pieceCount; ++i ) {
                     tr_torrentSetHasPiece( tor, i, FALSE );
                     tr_torrentSetPieceChecked( tor, i, TRUE );
                 }
+                tor->failedTimeCheck = FALSE;
                 tor->lostAllFiles = FALSE;
                 tr_torrentSetDirty( tor );
             }
@@ -315,6 +317,24 @@ tr_verifyAdd( tr_torrent *      tor,
         else
             tr_torrentUncheck( tor );
 
+        fireCheckDone( tor, verify_done_cb );
+    }
+    else if( tor->lostAllFiles ){
+        tr_torinf( tor, "Reloading local data" );
+        tor->failedTimeCheck = FALSE;
+
+        if( tr_torrentLoadProgress( tor ) != TR_FR_PROGRESS )
+        {
+            tr_piece_index_t i;
+            tr_torerr( tor, "Reloading local data failed, resetting all progress" );
+            for( i=0; i<tor->info.pieceCount; ++i ) {
+                tr_torrentSetHasPiece( tor, i, FALSE );
+                tr_torrentSetPieceChecked( tor, i, TRUE );
+            }
+        }
+
+        tor->lostAllFiles = FALSE;
+        tr_torrentSetDirty( tor );
         fireCheckDone( tor, verify_done_cb );
     }
     else if( tr_torrentCountUncheckedPieces( tor ) == 0 
