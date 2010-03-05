@@ -769,6 +769,7 @@ tr_torrentLoadProgress( tr_torrent * tor )
     if( !loadBencFromFile( tor, &top ) )
         return 0;
 
+    tr_bencFree( &top );
     return loadProgress( &top, tor );
 }
 

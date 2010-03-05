@@ -315,7 +315,10 @@ tr_verifyAdd( tr_torrent *      tor,
             }
         }
         else
+        {
             tr_torrentUncheck( tor );
+            tor->failedTimeCheck = FALSE;
+        }
 
         fireCheckDone( tor, verify_done_cb );
     }
