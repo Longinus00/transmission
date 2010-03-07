@@ -763,14 +763,17 @@ uint64_t
 tr_torrentLoadProgress( tr_torrent * tor )
 {
     tr_benc top;
+    uint64_t ret;
     
     assert( tr_isTorrent( tor ) );
 
     if( loadBencFromFile( tor, &top ) )
         return 0;
 
+    ret = loadProgress( &top, tor );
     tr_bencFree( &top );
-    return loadProgress( &top, tor );
+
+    return ret;
 }
 
 void
