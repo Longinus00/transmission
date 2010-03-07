@@ -577,7 +577,7 @@ loadFromFile( tr_torrent * tor,
 
     assert( tr_isTorrent( tor ) );
 
-    if( !loadBencFromFile( tor, &top ) )
+    if( loadBencFromFile( tor, &top ) )
         return fieldsToLoad;
 
     if( ( fieldsToLoad & TR_FR_CORRUPT )
@@ -766,7 +766,7 @@ tr_torrentLoadProgress( tr_torrent * tor )
     
     assert( tr_isTorrent( tor ) );
 
-    if( !loadBencFromFile( tor, &top ) )
+    if( loadBencFromFile( tor, &top ) )
         return 0;
 
     tr_bencFree( &top );
