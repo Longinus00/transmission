@@ -481,7 +481,7 @@ onSaveTimer( int foo UNUSED, short bar UNUSED, void * vsession )
 ***/
 
 typedef enum
-{   
+{
     TR_QUEUE_IGNORE,    /* torrents ignored by the queue */
     TR_QUEUE_SEED,      /* seeding torrents don't use queueRank */
     TR_QUEUE_DOWNLOAD   /* queued torrents */
@@ -1553,7 +1553,7 @@ tr_sessionGetPeerLimitPerTorrent( const tr_session * session )
 ****
 ***/
 
-static int 
+static int
 compareTorrentByQueueRank( const void * va, const void * vb )
 {
     const tr_torrent * a = *(const tr_torrent**)va;
@@ -1563,7 +1563,7 @@ compareTorrentByQueueRank( const void * va, const void * vb )
 
 static tr_torrent **
 getQueueArray( tr_session          * session,
-               int                 * count, 
+               int                 * count,
                const tr_queueType    type)
 {
     int i = 0;
@@ -1590,7 +1590,7 @@ getQueueArray( tr_session          * session,
             ++i;
         }
     }
-    
+
     if( type != TR_QUEUE_IGNORE )
         qsort( torrents, i, sizeof( tr_torrent* ), compareTorrentByQueueRank );
 
