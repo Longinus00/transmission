@@ -92,6 +92,17 @@ static tr_option opts[] =
     { 961, "find",                  "Tell Transmission where to find a torrent's data", NULL, 1, "<path>" },
     { 'm', "portmap",               "Enable portmapping via NAT-PMP or UPnP", "m",  0, NULL },
     { 'M', "no-portmap",            "Disable portmapping", "M",  0, NULL },
+    { 932, "max-download",          "Set the max active download torrent(s)", "md", 1, "<max>" },
+    { 933, "max-seed",              "Set the max active seed torrent(s)", "ms", 1, "<max>" },
+    { 934, "ignore-slow",           "Ignore slow torrents in the queue", "is", 0, NULL },
+    { 935, "no-ignore-slow",        "Don't ignore slow torrents in the queue", "nis", 0, NULL },
+    { 936, "enable-queue",          "Enable the torrent queue", "eq", 0, NULL },
+    { 937, "disable-queue",         "Disable the torrent queue", "dq", 0, NULL },
+    { 945, "queueUp",               "Move the torrent(s) up in the queue", "qu", 0, NULL },
+    { 946, "queueDown",             "Move the torrent(s) down in the queue", "qd", 0, NULL },
+    { 947, "queueTop",              "Move the torrent(s) to the top of the queue", "qt", 0, NULL },
+    { 948, "queueBottom",           "Move the torrent(s) to the bottom of the queue", "qb", 0, NULL },
+
     { 'n', "auth",                  "Set authentication info", "n",  1, "<username:password>" },
     { 'N', "netrc",                 "Set authentication info from a .netrc file", "N",  1, "<filename>" },
     { 'o', "dht",                   "Enable distributed hash tables (DHT)", "o", 0, NULL },
@@ -653,6 +664,60 @@ readargs( int argc, const char ** argv )
                 tr_bencDictAddInt( args, TR_PREFS_KEY_PEER_LIMIT_GLOBAL, atoi(optarg) );
                 break;
 
+            case 932:
+                tr_bencDictAddStr( &top, "method", "session-set" );
+                tr_bencDictAddInt( args, TR_PREFS_KEY_MAX_DOWNLOAD_ACTIVE, atoi(optarg) );
+                break;
+
+            case 933:
+                tr_bencDictAddStr( &top, "method", "session-set" );
+                tr_bencDictAddInt( args, TR_PREFS_KEY_MAX_SEED_ACTIVE, atoi(optarg) );
+                break;
+
+            case 934:
+                tr_bencDictAddStr( &top, "method", "session-set" );
+                tr_bencDictAddInt( args, TR_PREFS_KEY_IGNORE_SLOW_TORRENTS, TRUE );
+                break;
+
+            case 935:
+                tr_bencDictAddStr( &top, "method", "session-set" );
+                tr_bencDictAddInt( args, TR_PREFS_KEY_IGNORE_SLOW_TORRENTS, FALSE );
+                break;
+
+            case 936:
+                tr_bencDictAddStr( &top, "method", "session-set" );
+                tr_bencDictAddInt( args, TR_PREFS_KEY_QUEUE_ENABLED, TRUE );
+                break;
+
+            case 937:
+                tr_bencDictAddStr( &top, "method", "session-set" );
+                tr_bencDictAddInt( args, TR_PREFS_KEY_QUEUE_ENABLED, FALSE );
+                break;
+
+            case 945:
+                tr_bencDictAddStr( &top, "method", "torrent-set" );
+                tr_bencDictAddInt( args, "queueRank", TR_QUEUE_UP );
+                addIdArg( args, id );
+                break;
+
+            case 946:
+                tr_bencDictAddStr( &top, "method", "torrent-set" );
+                tr_bencDictAddInt( args, "queueRank", TR_QUEUE_DOWN );
+                addIdArg( args, id );
+                break;
+
+            case 947:
+                tr_bencDictAddStr( &top, "method", "torrent-set" );
+                tr_bencDictAddInt( args, "queueRank", TR_QUEUE_TOP );
+                addIdArg( args, id );
+                break;
+
+            case 948:
+                tr_bencDictAddStr( &top, "method", "torrent-set" );
+                tr_bencDictAddInt( args, "queueRank", TR_QUEUE_BOTTOM );
+                addIdArg( args, id );
+                break;
+
             case 940:
                 tr_bencDictAddStr( &top, "method", "torrent-get" );
                 tr_bencDictAddInt( &top, "tag", TAG_PEERS );
@@ -1068,6 +1133,10 @@ printSession( tr_benc * top )
             printf( "  Peer exchange allowed: %s\n", ( boolVal ? "Yes" : "No" ) );
         if( tr_bencDictFindStr( args,  TR_PREFS_KEY_ENCRYPTION, &str ) )
             printf( "  Encryption: %s\n", str );
+        if( tr_bencDictFindInt( args, "max-download-active", &i ) )
+            printf( "  Max download active: %" PRId64 "\n", i );
+        if( tr_bencDictFindInt( args, "max-seed-active", &i ) )
+            printf( "  Max seed active: %" PRId64 "\n", i );
         printf( "\n" );
 
         {
