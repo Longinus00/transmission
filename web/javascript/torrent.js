@@ -557,8 +557,8 @@ Torrent.prototype =
 				c += 'Inf';
 			else
 				c += '0';
-            if(this.seedRatioLimit() > -1)
-                c += ' Goal: ' + Math.toFixed( this.seedRatioLimit(), 2 );
+			if(this.seedRatioLimit() > -1)
+				c += ' Goal: ' + Math.toFixed( this.seedRatioLimit(), 2 );
 			c += ')';
 			progress_details = c;
 
