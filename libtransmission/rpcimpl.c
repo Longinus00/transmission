@@ -106,14 +106,6 @@ tr_idle_function_done( struct tr_rpc_idle_data * data, const char * result )
 ****
 ***/
 
-static int
-compareTorrentByQueueRank( const void * va, const void * vb )
-{
-    const tr_torrent * a = *(const tr_torrent**)va;
-    const tr_torrent * b = *(const tr_torrent**)vb;
-    return ( a->queueRank - b->queueRank );
-}
-
 static tr_torrent **
 getTorrents( tr_session * session,
              tr_benc    * args,
@@ -183,7 +175,7 @@ getTorrents( tr_session * session,
             torrents[torrentCount++] = tor;
     }
 
-    qsort( torrents, torrentCount, sizeof( tr_torrent* ), compareTorrentByQueueRank );
+    qsort( torrents, torrentCount, sizeof( tr_torrent* ), tr_sessionCompareTorrentByQueueRank );
 
     *setmeCount = torrentCount;
     return torrents;

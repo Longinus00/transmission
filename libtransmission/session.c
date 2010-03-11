@@ -1553,12 +1553,18 @@ tr_sessionGetPeerLimitPerTorrent( const tr_session * session )
 ****
 ***/
 
-static int
-compareTorrentByQueueRank( const void * va, const void * vb )
+int
+tr_sessionCompareTorrentByQueueRank( const void * va, const void * vb )
 {
     const tr_torrent * a = *(const tr_torrent**)va;
     const tr_torrent * b = *(const tr_torrent**)vb;
-    return ( a->queueRank - b->queueRank );
+    int ret = a->queueRank - b->queueRank;
+    if( ret == 0 ){
+        const tr_info * ia = tr_torrentInfo( a );
+        const tr_info * ib = tr_torrentInfo( b );
+        ret = strcmp( ia->name, ib->name );
+    }
+    return ret;
 }
 
 static tr_torrent **
@@ -1592,7 +1598,7 @@ getQueueArray( tr_session          * session,
     }
 
     if( type != TR_QUEUE_IGNORE )
-        qsort( torrents, i, sizeof( tr_torrent* ), compareTorrentByQueueRank );
+        qsort( torrents, i, sizeof( tr_torrent* ), tr_sessionCompareTorrentByQueueRank );
 
     *count = i;
     return torrents;
