@@ -435,7 +435,7 @@ loadProgress( tr_benc *    dict,
                         "File #%zu needs to be verified - couldn't find benc entry",
                         i );
                     tr_torrentSetFileChecked( tor, i, FALSE );
-                    tor->failedTimeCheck = TRUE;
+                    tor->failedState = TR_FAILED_TIME;
                 }
                 else
                 {
@@ -449,7 +449,7 @@ loadProgress( tr_benc *    dict,
                             "File #%zu needs to be verified - times %lu and %lu don't match",
                             i, t, curMTimes[i] );
                         tr_torrentSetFileChecked( tor, i, FALSE );
-                        tor->failedTimeCheck = TRUE;
+                        tor->failedState = TR_FAILED_TIME;
                     }
                 }
             }
@@ -459,7 +459,7 @@ loadProgress( tr_benc *    dict,
             tr_torrentUncheck( tor );
             tr_tordbg(
                 tor, "Torrent needs to be verified - unable to find mtimes" );
-            tor->failedTimeCheck = TRUE;
+            tor->failedState = TR_FAILED_TIME;
         }
 
         if( tr_bencDictFindRaw( p, KEY_PROGRESS_BITFIELD, &raw, &rawlen ) )
@@ -474,7 +474,7 @@ loadProgress( tr_benc *    dict,
                 tr_tordbg(
                     tor,
                     "Torrent needs to be verified - error loading bitfield" );
-                tor->failedTimeCheck = TRUE;
+                tor->failedState = TR_FAILED_TIME;
             }
         }
         else
@@ -483,7 +483,7 @@ loadProgress( tr_benc *    dict,
             tr_tordbg(
                 tor,
                 "Torrent needs to be verified - unable to find bitfield" );
-            tor->failedTimeCheck = TRUE;
+            tor->failedState = TR_FAILED_TIME;
         }
 
         tr_free( curMTimes );
@@ -505,7 +505,7 @@ tr_torrentSaveResume( const tr_torrent * tor )
 
     if( !tr_isTorrent( tor ) )
         return;
-    if( tor->lostAllFiles )
+    if( tor->failedState == TR_FAILED_FILE )
         return;
 
     tr_tordbg( tor, "Saving .resume file for \"%s\"", tr_torrentName( tor ) );

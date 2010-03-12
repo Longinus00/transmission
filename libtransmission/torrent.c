@@ -611,10 +611,6 @@ torrentInit( tr_torrent * tor, const tr_ctor * ctor )
     static int nextUniqueId = 1;
     tr_session * session = tr_ctorGetSession( ctor );
 
-    tor->pieceFailedHash = FALSE;
-    tor->failedTimeCheck = FALSE;
-    tor->lostAllFiles    = FALSE;
-
     assert( session != NULL );
 
     tr_sessionLock( session );
@@ -622,6 +618,7 @@ torrentInit( tr_torrent * tor, const tr_ctor * ctor )
     tor->session   = session;
     tor->uniqueId = nextUniqueId++;
     tor->magicNumber = TORRENT_MAGIC_NUMBER;
+    tor->failedState = TR_FAILED_NONE;
 
     tr_sha1( tor->obfuscatedHash, "req2", 4,
              tor->info.hash, SHA_DIGEST_LENGTH,
@@ -659,7 +656,7 @@ torrentInit( tr_torrent * tor, const tr_ctor * ctor )
     torrentInitFromInfo( tor );
     loaded = tr_torrentLoadResume( tor, ~0, ctor );
     tor->completeness = tr_cpGetStatus( &tor->completion );
-    
+
     refreshCurrentDir( tor );
 
     doStart = tor->isRunning;
@@ -980,7 +977,7 @@ tr_torrentStat( tr_torrent * tor )
     s->uploadedEver    = tor->uploadedCur   + tor->uploadedPrev;
     s->haveValid       = tr_cpHaveValid( &tor->completion );
     s->haveUnchecked   = tr_cpHaveTotal( &tor->completion ) - s->haveValid;
-    s->failedTimeCheck = tor->failedTimeCheck;
+    s->failedTimeCheck = tor->failedState > TR_FAILED_NONE ? TRUE : FALSE;
 
     if( usableSeeds > 0 )
     {
@@ -1334,7 +1331,7 @@ checkAndStartImpl( void * vtor )
 
     /** If we had local data before, but it's disappeared,
         stop the torrent and log an error. */
-    if( tor->lostAllFiles )
+    if( tor->failedState == TR_FAILED_FILE )
     {
         tr_torrentSetLocalError( tor, _( "No data found!  Reconnect any disconnected drives, use \"Set Location\", or restart the torrent to re-download." ) );
         tr_torrentStop( tor );
@@ -1410,7 +1407,7 @@ torrentRecheckDoneImpl( void * vtor )
     assert( tr_isTorrent( tor ) );
     tr_torrentRecheckCompleteness( tor );
 
-    if( tor->lostAllFiles )
+    if( tor->failedState == TR_FAILED_FILE )
     {
         tr_torrentSetLocalError( tor, _( "Can't find local data.  Try \"Set Location\" to find it, or restart the torrent to re-download." ) );
         tr_torrentStop( tor );
@@ -1450,8 +1447,8 @@ verifyTorrent( void * vtor )
 
     /* add the torrent to the recheck queue */
     tr_torrentUncheck( tor );
-    if( tor->failedTimeCheck )
-        tor->pieceFailedHash = TRUE;
+    if( tor->failedState == TR_FAILED_TIME )
+        tor->failedState = TR_FAILED_HASH;
     tr_verifyAdd( tor, torrentRecheckDoneCB );
 
     tr_sessionUnlock( tor->session );

@@ -269,14 +269,14 @@ tr_ioReadCheckPiece( tr_torrent       * tor,
                      uint8_t          * buf )
 {
     int ret = readOrWritePiece( tor, TR_IO_READ, pieceIndex, begin, buf, len );
-    if( tor->failedTimeCheck
+    if( tor->failedState > TR_FAILED_NONE
         && !tr_torrentIsPieceChecked( tor, pieceIndex )
         && !ret )
     { 
         const tr_bool ok = tr_ioTestPiece( tor, pieceIndex );
         if( !ok )
         {
-            tor->pieceFailedHash = TRUE;
+            tor->failedState = TR_FAILED_HASH;
             tr_torrentUncheck( tor );
             tr_torrentSetLocalError( tor, "Piece #%d failed hash check, torrent needs reverify", pieceIndex );
             tr_torerr( tor, "Piece #%d failed hash check, torrent needs reverify", pieceIndex );

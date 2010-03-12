@@ -244,10 +244,7 @@ verifyThreadFunc( void * unused UNUSED )
             if( changed )
                 tr_torrentSetDirty( tor );
             if( tr_torrentCountUncheckedPieces( tor ) == 0 )
-            {
-                tor->pieceFailedHash = FALSE;
-                tor->failedTimeCheck = FALSE;
-            }
+                tor->failedState = TR_FAILED_NONE;
             fireCheckDone( tor, currentNode.verify_done_cb );
         }
     }
@@ -298,33 +295,32 @@ tr_verifyAdd( tr_torrent *      tor,
         const tr_bool hadAny = tr_cpHaveTotal( &tor->completion ) != 0;
 
         if( hadAny ){
-            if( tor->lostAllFiles ){
+            if( tor->failedState == TR_FAILED_FILE ){
                 tr_piece_index_t i;
                 tr_torinf( tor, "Reseting progress" );
                 for( i=0; i<tor->info.pieceCount; ++i ) {
                     tr_torrentSetHasPiece( tor, i, FALSE );
                     tr_torrentSetPieceChecked( tor, i, TRUE );
                 }
-                tor->failedTimeCheck = FALSE;
-                tor->lostAllFiles = FALSE;
+                tor->failedState = TR_FAILED_NONE;
                 tr_torrentSetDirty( tor );
             }
             else {
                 tr_torerr( tor, "Can't find local data" );
-                tor->lostAllFiles = TRUE;
+                tor->failedState = TR_FAILED_FILE;
             }
         }
         else
         {
             tr_torrentUncheck( tor );
-            tor->failedTimeCheck = FALSE;
+            tor->failedState = TR_FAILED_NONE;
         }
 
         fireCheckDone( tor, verify_done_cb );
     }
-    else if( tor->lostAllFiles ){
+    else if( tor->failedState == TR_FAILED_FILE ){
         tr_torinf( tor, "Reloading local data" );
-        tor->failedTimeCheck = FALSE;
+        tor->failedState = TR_FAILED_NONE;
 
         if( tr_torrentLoadProgress( tor ) != TR_FR_PROGRESS )
         {
@@ -336,12 +332,11 @@ tr_verifyAdd( tr_torrent *      tor,
             }
         }
 
-        tor->lostAllFiles = FALSE;
         tr_torrentSetDirty( tor );
         fireCheckDone( tor, verify_done_cb );
     }
     else if( tr_torrentCountUncheckedPieces( tor ) == 0 
-        || ( tor->failedTimeCheck && !tor->pieceFailedHash ) )
+        || ( tor->failedState == TR_FAILED_TIME ) )
     {
         /* doesn't need to be checked... */
         fireCheckDone( tor, verify_done_cb );

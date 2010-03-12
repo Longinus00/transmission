@@ -130,6 +130,15 @@ tr_verify_state;
 void             tr_torrentSetVerifyState( tr_torrent      * tor,
                                            tr_verify_state   state );
 
+typedef enum
+{
+    TR_FAILED_NONE  = 0, // Everything's okay
+    TR_FAILED_TIME  = 1, // Failed mtime check
+    TR_FAILED_HASH  = 2, // Failed piece hash check
+    TR_FAILED_FILE  = 3  // Missing all files
+}
+tr_failed_state;
+
 struct tr_incomplete_metadata;
 
 /** @brief Torrent object */
@@ -230,13 +239,11 @@ struct tr_torrent
     tr_bool                    needsSeedRatioCheck;
     tr_bool                    startAfterVerify;
     tr_bool                    isDirty;
-    tr_bool                    pieceFailedHash;
-    tr_bool                    failedTimeCheck;
-    tr_bool                    lostAllFiles;
 
     uint16_t                   maxConnectedPeers;
 
     tr_verify_state            verifyState;
+    tr_failed_state            failedState;
 
     time_t                     lastStatTime;
     tr_stat                    stats;
