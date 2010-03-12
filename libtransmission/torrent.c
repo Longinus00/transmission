@@ -2947,10 +2947,7 @@ tr_torrentCheckQueue( tr_torrent * tor )
 
     leftUntilDone = tr_cpLeftUntilDone( &tor->completion );
     if( tr_torrentIsUnlimited( tor ) )
-    {
-        if( tor->queueRank != 0 )
-            setQueueRank( tor, 0 );
-    }
+        setQueueRank( tor, 0 );
     else if( leftUntilDone == 0 && tor->queueRank > 0 )
         setSeedRank( tor );
     else if( leftUntilDone > 0 && tor->queueRank < 0 )
@@ -2989,6 +2986,10 @@ tr_torrentSetSeedRank( tr_torrent * tor )
     assert( tr_isTorrent( tor ) );
 
     leftUntilDone = tr_cpLeftUntilDone( &tor->completion );
-    if( leftUntilDone == 0 && tor->queueRank != 0 )
+    if( tor->queueRank == 0 )
+        return;
+    else if( leftUntilDone == 0 )
         setSeedRank( tor );
+    else
+        tr_torrentCheckQueue( tor );
 }
