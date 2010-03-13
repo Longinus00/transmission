@@ -227,18 +227,10 @@ tr_torrentGetRatioMode( const tr_torrent * tor )
     return tor->ratioLimitMode;
 }
 
-tr_bool
+inline tr_bool
 tr_torrentIsUnlimited( const tr_torrent * tor )
 {
-    assert( tr_isTorrent( tor ) );
-
-    if( tr_torrentGetRatioMode( tor ) == TR_RATIOLIMIT_UNLIMITED )
-        return TRUE;
-    if ( tr_torrentGetRatioMode( tor ) == TR_RATIOLIMIT_GLOBAL
-            && !tr_sessionIsRatioLimited( tor->session ) )
-        return TRUE;
-    else
-        return FALSE;
+    return !tr_torrentGetSeedRatio( tor, NULL );
 }
 
 void
