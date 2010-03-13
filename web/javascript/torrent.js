@@ -551,6 +551,17 @@ Torrent.prototype =
 		}
 		else
 		{
+			var eta = '';
+
+			if( this.isActive( ) && this.seedRatioLimit( ) > 0 )
+			{
+				eta = ' - ';
+				if (this._eta < 0 || this._eta >= Torrent._InfiniteTimeRemaining )
+					eta += 'remaining time unknown';
+				else
+					eta += Math.formatSeconds(this._eta) + ' remaining';
+			}
+
 			// Create the 'progress details' label
 			// Eg: '698.05 MB, uploaded 8.59 GB (Ratio: 12.3)'
 			c = Math.formatBytes( this._size );
@@ -566,6 +577,7 @@ Torrent.prototype =
 			if(this.seedRatioLimit() > -1)
 				c += ' Goal: ' + Math.toFixed( this.seedRatioLimit(), 2 );
 			c += ')';
+			c += eta;
 			progress_details = c;
 
 			var status = this.isActive() ? 'complete' : 'complete_stopped';
