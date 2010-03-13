@@ -813,6 +813,8 @@ torrentSet( tr_session               * session,
             tr_torrentSetRatioMode( tor, tmp );
         if( tr_bencDictFindInt( args_in, "queueRank", &tmp ) )
             torrentMoveQueueRank( tor, (tr_queue_direction)tmp );
+        if( tr_bencDictFindInt( args_in, "setQueueRank", &tmp ) )
+            tr_torrentSetQueueRank( tor, tmp );
         notify( session, TR_RPC_TORRENT_CHANGED, tor );
     }
 
