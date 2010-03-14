@@ -272,7 +272,7 @@ tr_ioReadCheckPiece( tr_torrent       * tor,
     if( tor->failedState > TR_FAILED_NONE
         && !tr_torrentIsPieceChecked( tor, pieceIndex )
         && !ret )
-    { 
+    {
         const tr_bool ok = tr_ioTestPiece( tor, pieceIndex );
         if( !ok )
         {

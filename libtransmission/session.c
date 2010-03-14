@@ -469,7 +469,7 @@ onSaveTimer( int foo UNUSED, short bar UNUSED, void * vsession )
 }
 
 /**
- * Periodically scan through the torrent list and verify finished 
+ * Periodically scan through the torrent list and verify finished
  * torrents that failed the mtime check at loading. Only queue
  * torrents for checking if no other torrent is currently checking
  * to ensure as many torrents can seed as possible.

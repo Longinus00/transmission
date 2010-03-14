@@ -335,7 +335,7 @@ tr_verifyAdd( tr_torrent *      tor,
         tr_torrentSetDirty( tor );
         fireCheckDone( tor, verify_done_cb );
     }
-    else if( tr_torrentCountUncheckedPieces( tor ) == 0 
+    else if( tr_torrentCountUncheckedPieces( tor ) == 0
         || ( tor->failedState == TR_FAILED_TIME ) )
     {
         /* doesn't need to be checked... */
@@ -389,7 +389,7 @@ tr_verifyInProgressTorrent( const tr_torrent * tor )
 tr_bool
 tr_verifyInProgress( void )
 {
-    return verifyThread != NULL; 
+    return verifyThread != NULL;
 }
 
 void

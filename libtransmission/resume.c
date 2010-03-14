@@ -764,7 +764,7 @@ tr_torrentLoadProgress( tr_torrent * tor )
 {
     tr_benc top;
     uint64_t ret;
-    
+
     assert( tr_isTorrent( tor ) );
 
     if( loadBencFromFile( tor, &top ) )
