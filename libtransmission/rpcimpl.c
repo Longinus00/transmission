@@ -811,9 +811,9 @@ torrentSet( tr_session               * session,
             tr_torrentSetRatioLimit( tor, d );
         if( tr_bencDictFindInt( args_in, "seedRatioMode", &tmp ) )
             tr_torrentSetRatioMode( tor, tmp );
-        if( tr_bencDictFindInt( args_in, "queueRank", &tmp ) )
+        if( tr_bencDictFindInt( args_in, "moveQueueRank", &tmp ) )
             torrentMoveQueueRank( tor, (tr_queue_direction)tmp );
-        if( tr_bencDictFindInt( args_in, "setQueueRank", &tmp ) )
+        if( tr_bencDictFindInt( args_in, "queueRank", &tmp ) )
             tr_torrentSetQueueRank( tor, tmp );
         notify( session, TR_RPC_TORRENT_CHANGED, tor );
     }

@@ -700,37 +700,37 @@ readargs( int argc, const char ** argv )
 
             case 938:
                 tr_bencDictAddStr( &top, "method", "torrent-set" );
-                tr_bencDictAddInt( args, "queueRank", TR_QUEUE_IGNORE );
+                tr_bencDictAddInt( args, "moveQueueRank", TR_QUEUE_IGNORE );
                 addIdArg( args, id );
                 break;
 
             case 939:
                 tr_bencDictAddStr( &top, "method", "torrent-set" );
-                tr_bencDictAddInt( args, "queueRank", TR_QUEUE_UNIGNORE );
+                tr_bencDictAddInt( args, "moveQueueRank", TR_QUEUE_UNIGNORE );
                 addIdArg( args, id );
                 break;
 
             case 945:
                 tr_bencDictAddStr( &top, "method", "torrent-set" );
-                tr_bencDictAddInt( args, "queueRank", TR_QUEUE_UP );
+                tr_bencDictAddInt( args, "moveQueueRank", TR_QUEUE_UP );
                 addIdArg( args, id );
                 break;
 
             case 946:
                 tr_bencDictAddStr( &top, "method", "torrent-set" );
-                tr_bencDictAddInt( args, "queueRank", TR_QUEUE_DOWN );
+                tr_bencDictAddInt( args, "moveQueueRank", TR_QUEUE_DOWN );
                 addIdArg( args, id );
                 break;
 
             case 947:
                 tr_bencDictAddStr( &top, "method", "torrent-set" );
-                tr_bencDictAddInt( args, "queueRank", TR_QUEUE_TOP );
+                tr_bencDictAddInt( args, "moveQueueRank", TR_QUEUE_TOP );
                 addIdArg( args, id );
                 break;
 
             case 948:
                 tr_bencDictAddStr( &top, "method", "torrent-set" );
-                tr_bencDictAddInt( args, "queueRank", TR_QUEUE_BOTTOM );
+                tr_bencDictAddInt( args, "moveQueueRank", TR_QUEUE_BOTTOM );
                 addIdArg( args, id );
                 break;
 
