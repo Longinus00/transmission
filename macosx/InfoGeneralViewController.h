@@ -23,10 +23,13 @@
  *****************************************************************************/
 
 #import <Cocoa/Cocoa.h>
+#import "InfoViewController.h"
 
-@interface InfoGeneralViewController : NSViewController
+@interface InfoGeneralViewController : NSViewController <InfoViewController>
 {
     NSArray * fTorrents;
+    
+    BOOL fSet;
     
     IBOutlet NSTextField * fPiecesField, * fHashField, * fSecureField,
                         * fDataLocationField,

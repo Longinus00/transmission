@@ -23,14 +23,17 @@
  *****************************************************************************/
 
 #import <Cocoa/Cocoa.h>
+#import "InfoViewController.h"
 
 @class Torrent;
 @class TrackerTableView;
 @class TrackerCell;
 
-@interface InfoTrackersViewController : NSViewController
+@interface InfoTrackersViewController : NSViewController <InfoViewController>
 {
     NSArray * fTorrents;
+    
+    BOOL fSet;
     
     NSMutableArray * fTrackers;
     
@@ -43,7 +46,8 @@
 - (void) setInfoForTorrents: (NSArray *) torrents;
 - (void) updateInfo;
 
-- (void) clearTrackers;
+- (void) saveViewSize;
+- (void) clearView;
 
 - (void) addRemoveTracker: (id) sender;
 

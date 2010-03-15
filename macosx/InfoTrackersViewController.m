@@ -34,7 +34,10 @@
 #define TRACKER_ADD_TAG 0
 #define TRACKER_REMOVE_TAG 1
 
+
 @interface InfoTrackersViewController (Private)
+
+- (void) setupInfo;
 
 - (void) addTrackers;
 - (void) removeTrackers;
@@ -47,10 +50,23 @@
 {
     if ((self = [super initWithNibName: @"InfoTrackersView" bundle: nil]))
     {
+        [self setTitle: NSLocalizedString(@"Trackers", "Inspector view -> title")];
+        
         fTrackerCell = [[TrackerCell alloc] init];
     }
     
     return self;
+}
+
+- (void) awakeFromNib
+{
+    const CGFloat height = [[NSUserDefaults standardUserDefaults] floatForKey: @"InspectorContentHeightTracker"];
+    if (height != 0.0)
+    {
+        NSRect viewRect = [[self view] frame];
+        viewRect.size.height = height;
+        [[self view] setFrame: viewRect];
+    }
 }
 
 - (void) dealloc
@@ -70,36 +86,14 @@
     [fTorrents release];
     fTorrents = [torrents retain];
     
-    const NSUInteger numberSelected = [fTorrents count];
-    if (numberSelected != 1)
-    {
-        if (numberSelected == 0)
-        {
-            [fTrackers release];
-            fTrackers = nil;
-            
-            [fTrackerTable setTrackers: nil];
-            [fTrackerTable reloadData];
-        }
-        
-        [fTrackerTable setTorrent: nil];
-        
-        [fTrackerAddRemoveControl setEnabled: NO forSegment: TRACKER_ADD_TAG];
-        [fTrackerAddRemoveControl setEnabled: NO forSegment: TRACKER_REMOVE_TAG];
-    }
-    else
-    {
-        [fTrackerTable setTorrent: [fTorrents objectAtIndex: 0]];
-        
-        [fTrackerAddRemoveControl setEnabled: YES forSegment: TRACKER_ADD_TAG];
-        [fTrackerAddRemoveControl setEnabled: NO forSegment: TRACKER_REMOVE_TAG];
-    }
-    
-    [fTrackerTable deselectAll: self];
+    fSet = NO;
 }
 
 - (void) updateInfo
 {
+    if (!fSet)
+        [self setupInfo];
+    
     if ([fTorrents count] == 0)
         return;
     
@@ -142,7 +136,12 @@
     }
 }
 
-- (void) clearTrackers
+- (void) saveViewSize
+{
+    [[NSUserDefaults standardUserDefaults] setFloat: NSHeight([[self view] frame]) forKey: @"InspectorContentHeightTracker"];
+}
+
+- (void) clearView
 {
     [fTrackers release];
     fTrackers = nil;
@@ -245,6 +244,38 @@
 @end
 
 @implementation InfoTrackersViewController (Private)
+
+- (void) setupInfo
+{
+    const NSUInteger numberSelected = [fTorrents count];
+    if (numberSelected != 1)
+    {
+        if (numberSelected == 0)
+        {
+            [fTrackers release];
+            fTrackers = nil;
+            
+            [fTrackerTable setTrackers: nil];
+            [fTrackerTable reloadData];
+        }
+        
+        [fTrackerTable setTorrent: nil];
+        
+        [fTrackerAddRemoveControl setEnabled: NO forSegment: TRACKER_ADD_TAG];
+        [fTrackerAddRemoveControl setEnabled: NO forSegment: TRACKER_REMOVE_TAG];
+    }
+    else
+    {
+        [fTrackerTable setTorrent: [fTorrents objectAtIndex: 0]];
+        
+        [fTrackerAddRemoveControl setEnabled: YES forSegment: TRACKER_ADD_TAG];
+        [fTrackerAddRemoveControl setEnabled: NO forSegment: TRACKER_REMOVE_TAG];
+    }
+    
+    [fTrackerTable deselectAll: self];
+    
+    fSet = YES;
+}
 
 #warning doesn't like blank addresses
 - (void) addTrackers

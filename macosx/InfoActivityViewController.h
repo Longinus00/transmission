@@ -23,13 +23,16 @@
  *****************************************************************************/
 
 #import <Cocoa/Cocoa.h>
+#import "InfoViewController.h"
 
 @class PiecesView;
 @class Torrent;
 
-@interface InfoActivityViewController : NSViewController
+@interface InfoActivityViewController : NSViewController <InfoViewController>
 {
     NSArray * fTorrents;
+    
+    BOOL fSet;
     
     IBOutlet NSTextField * fDateAddedField, * fDateCompletedField, * fDateActivityField,
                         * fStateField, * fProgressField,
@@ -47,6 +50,6 @@
 
 - (void) setPiecesView: (id) sender;
 - (void) setPiecesViewForAvailable: (BOOL) available;
-- (void) clearPiecesView;
+- (void) clearView;
 
 @end

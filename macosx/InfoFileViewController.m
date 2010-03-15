@@ -30,6 +30,8 @@
 
 @interface InfoFileViewController (Private)
 
+- (void) setupInfo;
+
 - (BOOL) canQuickLookFile: (FileListNode *) item;
 
 @end
@@ -38,12 +40,24 @@
 
 - (id) init
 {
-    self = [super initWithNibName: @"InfoFileView" bundle: nil];
+    if ((self = [super initWithNibName: @"InfoFileView" bundle: nil]))
+    {
+        [self setTitle: NSLocalizedString(@"Files", "Inspector view -> title")];
+    }
+    
     return self;
 }
 
 - (void) awakeFromNib
 {
+    const CGFloat height = [[NSUserDefaults standardUserDefaults] floatForKey: @"InspectorContentHeightFiles"];
+    if (height != 0.0)
+    {
+        NSRect viewRect = [[self view] frame];
+        viewRect.size.height = height;
+        [[self view] setFrame: viewRect];
+    }
+    
     [[fFileFilterField cell] setPlaceholderString: NSLocalizedString(@"Filter", "inspector -> file filter")];
 }
 
@@ -62,26 +76,21 @@
     [fTorrents release];
     fTorrents = [torrents retain];
     
-    [fFileFilterField setStringValue: @""];
-    
-    if ([fTorrents count] == 1)
-    {
-        Torrent * torrent = [fTorrents objectAtIndex: 0];
-        
-        [fFileController setTorrent: torrent];
-        [fFileFilterField setEnabled: [torrent isFolder]];
-    }
-    else
-    {
-        [fFileController setTorrent: nil];
-        [fFileFilterField setEnabled: NO];
-    }
+    fSet = NO;
 }
 
 - (void) updateInfo
 {
+    if (!fSet)
+        [self setupInfo];
+    
     if ([fTorrents count] == 1)
         [fFileController reloadData];
+}
+
+- (void) saveViewSize
+{
+    [[NSUserDefaults standardUserDefaults] setFloat: NSHeight([[self view] frame]) forKey: @"InspectorContentHeightFiles"];
 }
 
 - (void) setFileFilterText: (id) sender
@@ -157,6 +166,26 @@
 @end
 
 @implementation InfoFileViewController (Private)
+
+- (void) setupInfo
+{
+    [fFileFilterField setStringValue: @""];
+    
+    if ([fTorrents count] == 1)
+    {
+        Torrent * torrent = [fTorrents objectAtIndex: 0];
+        
+        [fFileController setTorrent: torrent];
+        [fFileFilterField setEnabled: [torrent isFolder]];
+    }
+    else
+    {
+        [fFileController setTorrent: nil];
+        [fFileFilterField setEnabled: NO];
+    }
+    
+    fSet = YES;
+}
 
 - (BOOL) canQuickLookFile: (FileListNode *) item
 {

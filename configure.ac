@@ -3,8 +3,8 @@ dnl STATUS: "X" for prerelease beta builds,
 dnl         "Z" for unsupported trunk builds,
 dnl         "0" for stable, supported releases
 dnl these should be the only two lines you need to change
-m4_define([user_agent_prefix],[1.91+])
-m4_define([peer_id_prefix],[-TR191Z-])
+m4_define([user_agent_prefix],[1.92+])
+m4_define([peer_id_prefix],[-TR192Z-])
 
 AC_INIT([transmission],
         [user_agent_prefix],
@@ -42,7 +42,7 @@ AM_CONDITIONAL(TR_UNSTABLE, test "x$supported_build" = "xno")
 ##   MANDATORY for everything
 ##
 ##
-CURL_MINIMUM=7.16.3
+CURL_MINIMUM=7.15.4
 AC_SUBST(CURL_MINIMUM)
 LIBEVENT_MINIMUM=1.4.5
 AC_SUBST(LIBEVENT_MINIUM)
@@ -501,22 +501,27 @@ echo "
 
 Configuration:
 
-   Source code location:                                       ${srcdir}
-   Compiler:                                                   ${CXX}
-   System or bundled libevent:                                 ${libevent_source}
+   Source code location:                              ${srcdir}
+   Compiler:                                          ${CXX}
+   System or bundled libevent:                        ${libevent_source}
 
-   Build Command-Line client:                                  ${build_cli}
+   Build Command-Line client:                         ${build_cli}
 
-   Build GTK+ client:                                          ${build_gtk}
-      optional dbus support:                                   ${use_dbus_glib}
-      optional gio for optional watchdir support:              ${use_gio}
-      optional libnotify for 'download completed' popups:      ${use_libnotify}
-      optional libcanberra for 'download completed' sounds:    ${use_canberra}
-      optional libgconf to tell GNOME we handle magnet links:  ${use_libgconf}
-      optional libappindicator for Ubuntu-style system tray:   ${use_libappindicator}
+   Build GTK+ client:                                 ${build_gtk}
 
-   Build Daemon:                                               ${build_daemon}
+      dbus support:                                   ${use_dbus_glib}
+      gio for watchdir support:                       ${use_gio}
+      libnotify for 'download completed' popups:      ${use_libnotify}
+      libcanberra for 'download completed' sounds:    ${use_canberra}
+      libgconf to tell GNOME we handle magnet links:  ${use_libgconf}
+      libappindicator for Ubuntu-style system tray:   ${use_libappindicator}
 
-   Build Mac client:                                           ${build_mac}
+      THESE ARE ALL OPTIONAL. If you're a packager
+      or user who doesn't want these dependencies,
+      use the ones you want and skip all the rest.
+
+   Build Daemon:                                      ${build_daemon}
+
+   Build Mac client:                                  ${build_mac}
 
 "

@@ -27,11 +27,21 @@
 #import "NSStringAdditions.h"
 #import "Torrent.h"
 
+@interface InfoGeneralViewController (Private)
+
+- (void) setupInfo;
+
+@end
+
 @implementation InfoGeneralViewController
 
 - (id) init
 {
-    self = [super initWithNibName: @"InfoGeneralView" bundle: nil];
+    if ((self = [super initWithNibName: @"InfoGeneralView" bundle: nil]))
+    {
+        [self setTitle: NSLocalizedString(@"General Info", "Inspector view -> title")];
+    }
+    
     return self;
 }
 
@@ -68,6 +78,48 @@
     [fTorrents release];
     fTorrents = [torrents retain];
     
+    fSet = NO;
+}
+
+- (void) updateInfo
+{
+    if (!fSet)
+        [self setupInfo];
+    
+    if ([fTorrents count] != 1)
+        return;
+    
+    Torrent * torrent = [fTorrents objectAtIndex: 0];
+    
+    NSString * location = [torrent dataLocation];
+    [fDataLocationField setStringValue: location ? [location stringByAbbreviatingWithTildeInPath] : @""];
+    [fDataLocationField setToolTip: location ? location : @""];
+    
+    [fRevealDataButton setHidden: !location];
+}
+
+- (void) revealDataFile: (id) sender
+{
+    Torrent * torrent = [fTorrents objectAtIndex: 0];
+    NSString * location = [torrent dataLocation];
+    if (!location)
+        return;
+    
+    if ([NSApp isOnSnowLeopardOrBetter])
+    {
+        NSURL * file = [NSURL fileURLWithPath: location];
+        [[NSWorkspace sharedWorkspace] activateFileViewerSelectingURLs: [NSArray arrayWithObject: file]];
+    }
+    else
+        [[NSWorkspace sharedWorkspace] selectFile: location inFileViewerRootedAtPath: nil];
+}
+
+@end
+
+@implementation InfoGeneralViewController (Private)
+
+- (void) setupInfo
+{
     if ([fTorrents count] == 1)
     {
         Torrent * torrent = [fTorrents objectAtIndex: 0];
@@ -106,36 +158,9 @@
         
         [fRevealDataButton setHidden: YES];
     }
-}
-
-- (void) updateInfo
-{   
-    if ([fTorrents count] != 1)
-        return;
     
-    Torrent * torrent = [fTorrents objectAtIndex: 0];
-    
-    NSString * location = [torrent dataLocation];
-    [fDataLocationField setStringValue: location ? [location stringByAbbreviatingWithTildeInPath] : @""];
-    [fDataLocationField setToolTip: location ? location : @""];
-    
-    [fRevealDataButton setHidden: !location];
-}
-
-- (void) revealDataFile: (id) sender
-{
-    Torrent * torrent = [fTorrents objectAtIndex: 0];
-    NSString * location = [torrent dataLocation];
-    if (!location)
-        return;
-    
-    if ([NSApp isOnSnowLeopardOrBetter])
-    {
-        NSURL * file = [NSURL fileURLWithPath: location];
-        [[NSWorkspace sharedWorkspace] activateFileViewerSelectingURLs: [NSArray arrayWithObject: file]];
-    }
-    else
-        [[NSWorkspace sharedWorkspace] selectFile: location inFileViewerRootedAtPath: nil];
+    fSet = YES;
 }
 
 @end
+
