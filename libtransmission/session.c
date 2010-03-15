@@ -2604,7 +2604,7 @@ tr_sessionGetMaxDownloadActive( const tr_session * session )
 }
 
 void
-tr_sessionSetMaxDownloadActive( tr_session * session , int maxActive )
+tr_sessionSetMaxDownloadActive( tr_session * session, int maxActive )
 {
     assert( tr_isSession( session ) );
 
