@@ -98,6 +98,10 @@ Disable distribued hash table (DHT).
 Port to open and listen for RPC requests on.  Default: 9091
 .It Fl P, -peerport Ar port
 Port to listen for incoming peers on. Default: 51413
+.It Fl s Fl -start-paused
+Start added torrents paused
+.It Fl S Fl -no-start-paused
+Start added torrents unpaused
 .It Fl t Fl -auth
 Require clients to authenticate themselves.
 This doesn't do much good unless
@@ -107,6 +111,10 @@ and
 are also set.
 .It Fl T Fl -no-auth
 Don't require authentication from clients.
+.It Fl -trash-torrent
+Delete torrents after adding
+.It Fl -no-trash-torrent
+Do not delete torrents after adding
 .It Fl u Fl -username Ar username
 Used for client authentication.
 .It Fl v Fl -password Ar password
