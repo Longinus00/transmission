@@ -674,67 +674,36 @@ updateFastSet( tr_peermsgs * msgs UNUSED )
 ***  INTEREST
 **/
 
-static tr_bool
-isPieceInteresting( const tr_peermsgs * msgs,
-                    tr_piece_index_t    piece )
-{
-    const tr_torrent * torrent = msgs->torrent;
-
-    return ( !torrent->info.pieces[piece].dnd )                  /* we want it */
-          && ( !tr_cpPieceIsComplete( &torrent->completion, piece ) ) /* !have */
-          && ( tr_bitsetHas( &msgs->peer->have, piece ) );      /* peer has it */
-}
-
-/* "interested" means we'll ask for piece data if they unchoke us */
-static tr_bool
-isPeerInteresting( const tr_peermsgs * msgs )
-{
-    tr_piece_index_t    i;
-    const tr_torrent *  torrent;
-    const tr_bitfield * bitfield;
-    const int           clientIsSeed = tr_torrentIsSeed( msgs->torrent );
-
-    if( clientIsSeed )
-        return FALSE;
-
-    if( !tr_torrentIsPieceTransferAllowed( msgs->torrent, TR_PEER_TO_CLIENT ) )
-        return FALSE;
-
-    torrent = msgs->torrent;
-    bitfield = tr_cpPieceBitfield( &torrent->completion );
-
-    for( i = 0; i < torrent->info.pieceCount; ++i )
-        if( isPieceInteresting( msgs, i ) )
-            return TRUE;
-
-    return FALSE;
-}
-
 static void
-sendInterest( tr_peermsgs * msgs,
-              int           weAreInterested )
+sendInterest( tr_peermsgs * msgs, tr_bool clientIsInterested )
 {
     struct evbuffer * out = msgs->outMessages;
 
     assert( msgs );
-    assert( weAreInterested == 0 || weAreInterested == 1 );
+    assert( tr_isBool( clientIsInterested ) );
 
-    msgs->peer->clientIsInterested = weAreInterested;
-    dbgmsg( msgs, "Sending %s", weAreInterested ? "Interested" : "Not Interested" );
+    msgs->peer->clientIsInterested = clientIsInterested;
+    dbgmsg( msgs, "Sending %s", clientIsInterested ? "Interested" : "Not Interested" );
     tr_peerIoWriteUint32( msgs->peer->io, out, sizeof( uint8_t ) );
-    tr_peerIoWriteUint8 ( msgs->peer->io, out, weAreInterested ? BT_INTERESTED : BT_NOT_INTERESTED );
+    tr_peerIoWriteUint8 ( msgs->peer->io, out, clientIsInterested ? BT_INTERESTED : BT_NOT_INTERESTED );
 
     pokeBatchPeriod( msgs, HIGH_PRIORITY_INTERVAL_SECS );
     dbgOutMessageLen( msgs );
 }
 
 static void
-updateInterest( tr_peermsgs * msgs )
+updateInterest( tr_peermsgs * msgs UNUSED )
 {
-    const int i = isPeerInteresting( msgs );
+    /* FIXME -- might need to poke the mgr on startup */
+}
 
-    if( i != msgs->peer->clientIsInterested )
-        sendInterest( msgs, i );
+void
+tr_peerMsgsSetInterested( tr_peermsgs * msgs, int isInterested )
+{
+    assert( tr_isBool( isInterested ) );
+
+    if( isInterested != msgs->peer->clientIsInterested )
+        sendInterest( msgs, isInterested );
 }
 
 static tr_bool
@@ -838,6 +807,7 @@ void
 tr_peerMsgsCancel( tr_peermsgs * msgs, tr_block_index_t block )
 {
     struct peer_request req;
+/*fprintf( stderr, "SENDING CANCEL MESSAGE FOR BLOCK %zu\n\t\tFROM PEER %p ------------------------------------\n", (size_t)block, msgs->peer );*/
     blockToReq( msgs->torrent, block, &req );
     protocolSendCancel( msgs, &req );
 }
@@ -1472,6 +1442,7 @@ readBtMessage( tr_peermsgs * msgs, struct evbuffer * inbuf, size_t inlen )
             tr_peerIoReadUint32( msgs->peer->io, inbuf, &r.index );
             tr_peerIoReadUint32( msgs->peer->io, inbuf, &r.offset );
             tr_peerIoReadUint32( msgs->peer->io, inbuf, &r.length );
+            tr_historyAdd( msgs->peer->cancelsSentToClient, tr_date( ), 1 );
             dbgmsg( msgs, "got a Cancel %u:%u->%u", r.index, r.offset, r.length );
 
             for( i=0; i<msgs->peer->pendingReqsToClient; ++i ) {
@@ -1604,11 +1575,14 @@ clientGotBlock( tr_peermsgs *               msgs,
         return EMSGSIZE;
     }
 
-    /* save the block */
     dbgmsg( msgs, "got block %u:%u->%u", req->index, req->offset, req->length );
 
     if( !tr_peerMgrDidPeerRequest( msgs->torrent, msgs->peer, block ) ) {
         dbgmsg( msgs, "we didn't ask for this message..." );
+        return 0;
+    }
+    if( tr_cpPieceIsComplete( &msgs->torrent->completion, req->index ) ) {
+        dbgmsg( msgs, "we did ask for this message, but the piece is already complete..." );
         return 0;
     }
 
@@ -1679,6 +1653,17 @@ canRead( tr_peerIo * io, void * vmsgs, size_t * piece )
     return ret;
 }
 
+int
+tr_peerMsgsIsReadingBlock( const tr_peermsgs * msgs, tr_block_index_t block )
+{
+    if( msgs->state != AWAITING_BT_PIECE )
+        return FALSE;
+
+    return block == _tr_block( msgs->torrent,
+                               msgs->incoming.blockReq.index,
+                               msgs->incoming.blockReq.offset );
+}
+
 /**
 ***
 **/
@@ -1693,6 +1678,10 @@ updateDesiredRequestCount( tr_peermsgs * msgs, uint64_t now )
         msgs->desiredRequestCount = 0;
     }
     else if( msgs->peer->clientIsChoked )
+    {
+        msgs->desiredRequestCount = 0;
+    }
+    else if( !msgs->peer->clientIsInterested )
     {
         msgs->desiredRequestCount = 0;
     }
@@ -1941,6 +1930,7 @@ fillOutputBuffer( tr_peermsgs * msgs, time_t now )
                 tr_peerIoWriteBuf( io, out, TRUE );
                 bytesWritten += EVBUFFER_LENGTH( out );
                 msgs->clientSentAnythingAt = now;
+                tr_historyAdd( msgs->peer->blocksSentToPeer, tr_date( ), 1 );
             }
 
             evbuffer_free( out );

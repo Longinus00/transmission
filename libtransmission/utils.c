@@ -20,12 +20,6 @@
  #undef HAVE_POSIX_MEMALIGN /* not supported on OS X 10.5 and lower */
 #endif
 
-#if defined(HAVE_POSIX_MEMALIGN) || defined(HAVE_VALLOC)
- #if !defined(SYS_DARWIN)
-  #define _XOPEN_SOURCE 600 /* pick posix_memalign and valloc declarations */
- #endif
-#endif
-
 #include <assert.h>
 #include <ctype.h> /* isalpha, tolower */
 #include <errno.h>
@@ -58,6 +52,8 @@
 #include "version.h"
 
 
+time_t transmission_now = 0;
+
 int                   messageLevel = TR_MSG_INF;
 static tr_lock *      messageLock = NULL;
 static tr_bool        messageQueuing = FALSE;
@@ -70,18 +66,6 @@ static int            messageQueueCount = 0;
     static inline int IsDebuggerPresent( void ) { return FALSE; }
     static inline void OutputDebugString( const void * unused UNUSED ) { }
 #endif
-
-/***
-****
-***/
-
-time_t transmission_now = 0;
-
-void
-tr_timeUpdate( time_t now )
-{
-    transmission_now = now;
-}
 
 /***
 ****
