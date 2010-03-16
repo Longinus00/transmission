@@ -97,9 +97,9 @@ static const struct tr_option options[] =
     { 'I', "bind-address-ipv6", "Where to listen for peer connections", "I", 1, "<ipv6 address>" },
     { 'r', "rpc-bind-address", "Where to listen for RPC connections", "r", 1, "<ipv4 address>" },
     { 's', "start-paused", "Start added torrents paused.", "s", 0, NULL },
-    { 'S', "start-unpaused", "Start added torrents unpaused", "S", 0, NULL },
-    { 'h', "trash", "Delete torrents after adding", "h", 0, NULL },
-    { 'H', "no-trash", "Don't delete torrents after adding", "H", 0, NULL },
+    { 'S', "no-start-paused", "Start added torrents unpaused", "S", 0, NULL },
+    { 920, "trash-torrent", "Delete torrents after adding", "h", 0, NULL },
+    { 921, "no-trash-torrent", "Do not delete torrents after adding", "H", 0, NULL },
     { 953, "global-seedratio", "All torrents, unless overridden by a per-torrent setting, should seed until a specific ratio", "gsr", 1, "ratio" },
     { 954, "no-global-seedratio", "All torrents, unless overridden by a per-torrent setting, should seed regardless of ratio", "GSR", 0, NULL },
     { 0, NULL, NULL, NULL, 0, NULL }
@@ -235,9 +235,9 @@ onFileAdded( tr_session * session, const char * dir, const char * file )
         {
             tr_bool trash = FALSE;
             int test = tr_ctorGetDeleteSource( ctor, &trash );
-            
+
             tr_inf( "Parsing .torrent file successful \"%s\"", file );
-            
+
             if( !test && trash )
             {
                 tr_inf( "Deleting input .torrent file \"%s\"", file );
@@ -246,7 +246,7 @@ onFileAdded( tr_session * session, const char * dir, const char * file )
             }
         }
     }
-    
+
     tr_ctorFree( ctor );
     tr_free( filename );
 }
@@ -405,9 +405,9 @@ main( int argc, char ** argv )
                       break;
             case 'S': tr_bencDictAddBool( &settings, TR_PREFS_KEY_START, TRUE );
                       break;
-            case 'h': tr_bencDictAddBool( &settings, TR_PREFS_KEY_TRASH_ORIGINAL, TRUE );
+            case 920: tr_bencDictAddBool( &settings, TR_PREFS_KEY_TRASH_ORIGINAL, TRUE );
                       break;
-            case 'H': tr_bencDictAddBool( &settings, TR_PREFS_KEY_TRASH_ORIGINAL, FALSE );
+            case 921: tr_bencDictAddBool( &settings, TR_PREFS_KEY_TRASH_ORIGINAL, FALSE );
                       break;
 	    case 953:
 		      tr_bencDictAddReal( &settings, TR_PREFS_KEY_RATIO, atof(optarg) );
