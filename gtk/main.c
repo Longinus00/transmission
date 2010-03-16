@@ -1302,7 +1302,7 @@ prefschanged( TrCore * core UNUSED,
     }
     else if( !strcmp( key, TR_PREFS_KEY_START) )
     {
-        tr_sessionSetPaused( tr, !pref_flag_get( key ) ); 
+        tr_sessionSetPaused( tr, !pref_flag_get( key ) );
     }
     else if( !strcmp( key, TR_PREFS_KEY_TRASH_ORIGINAL ) )
     {

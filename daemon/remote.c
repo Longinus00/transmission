@@ -805,7 +805,7 @@ readargs( int argc, const char ** argv )
                 tr_bencDictAddStr( &top, "method", "session-set" );
                 tr_bencDictAddBool( args, TR_PREFS_KEY_START, FALSE );
                 break;
-            
+
             case 991:
                 tr_bencDictAddStr( &top, "method", "session-set" );
                 tr_bencDictAddBool( args, TR_PREFS_KEY_START, TRUE );
@@ -815,12 +815,12 @@ readargs( int argc, const char ** argv )
                 tr_bencDictAddStr( &top, "method", "session-set" );
                 tr_bencDictAddBool( args, TR_PREFS_KEY_TRASH_ORIGINAL, TRUE );
                 break;
-            
+
             case 993:
                 tr_bencDictAddStr( &top, "method", "session-set" );
                 tr_bencDictAddBool( args, TR_PREFS_KEY_TRASH_ORIGINAL, FALSE );
                 break;
- 
+
             case TR_OPT_ERR:
                 fprintf( stderr, "invalid option\n" );
                 showUsage( );
@@ -1165,7 +1165,7 @@ printSession( tr_benc * top )
             }
         }
         printf( "\n" );
-        
+
         printf( "MISC\n" );
         if( tr_bencDictFindBool( args, TR_PREFS_KEY_START, &boolVal ) )
             printf( "  Autostart added torrents: %s\n", ( boolVal ? "Yes" : "No" ) );

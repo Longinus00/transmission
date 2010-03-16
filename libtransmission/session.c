@@ -1437,7 +1437,7 @@ void
 tr_sessionSetPaused( tr_session * session, tr_bool isPaused )
 {
     assert( tr_isSession( session ) );
-    
+
     session->pauseAddedTorrent = isPaused;
 }
 
@@ -1445,7 +1445,7 @@ tr_bool
 tr_sessionGetPaused( const tr_session * session )
 {
     assert( tr_isSession( session ) );
-    
+
     return session->pauseAddedTorrent;
 }
 
@@ -1453,7 +1453,7 @@ void
 tr_sessionSetDeleteSource( tr_session * session, tr_bool deleteSource )
 {
     assert( tr_isSession( session ) );
-    
+
     session->deleteSourceTorrent = deleteSource;
 }
 
@@ -1461,7 +1461,7 @@ tr_bool
 tr_sessionGetDeleteSource( const tr_session * session )
 {
     assert( tr_isSession( session ) );
-    
+
     return session->deleteSourceTorrent;
 }
 

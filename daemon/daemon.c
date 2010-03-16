@@ -234,9 +234,9 @@ onFileAdded( tr_session * session, const char * dir, const char * file )
         {
             tr_bool trash = FALSE;
             int test = tr_ctorGetDeleteSource( ctor, &trash );
-            
+
             tr_inf( "Parsing .torrent file successful \"%s\"", file );
-            
+
             if( !test && trash )
             {
                 tr_inf( "Deleting input .torrent file \"%s\"", file );
@@ -245,7 +245,7 @@ onFileAdded( tr_session * session, const char * dir, const char * file )
             }
         }
     }
-    
+
     tr_ctorFree( ctor );
     tr_free( filename );
 }
