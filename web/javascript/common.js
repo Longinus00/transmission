@@ -319,8 +319,6 @@ function changeTab(tab, id) {
 function Prefs() { }
 Prefs.prototype = { };
 
-Prefs._AutoStart          = 'auto-start-torrents';
-
 Prefs._RefreshRate        = 'refresh_rate';
 Prefs._SessionRefreshRate        = 'session_refresh_rate';
 
@@ -351,7 +349,6 @@ Prefs._TurtleState        = 'turtle-state';
 
 Prefs._Defaults =
 {
-	'auto-start-torrents': true,
 	'filter': 'all',
 	'refresh_rate' : 5,
 	'show_filter': true,
