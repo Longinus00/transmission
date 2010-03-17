@@ -130,6 +130,7 @@ tr_verify_state;
 void             tr_torrentSetVerifyState( tr_torrent      * tor,
                                            tr_verify_state   state );
 
+/** The state of a torrent's data */
 typedef enum
 {
     TR_FAILED_NONE  = 0, // Everything's okay

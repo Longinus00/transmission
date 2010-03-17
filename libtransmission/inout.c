@@ -269,6 +269,9 @@ tr_ioReadCheckPiece( tr_torrent       * tor,
                      uint8_t          * buf )
 {
     int ret = readOrWritePiece( tor, TR_IO_READ, pieceIndex, begin, buf, len );
+    /* Only check piece hash if the torrent failed mtime check or failed to load
+     * its progress bitfield. If the piece was previously checked then we shouldn't
+     * check it twice. */
     if( tor->failedState > TR_FAILED_NONE
         && !tr_torrentIsPieceChecked( tor, pieceIndex )
         && !ret )

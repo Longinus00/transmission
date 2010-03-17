@@ -45,6 +45,9 @@ uint64_t tr_torrentLoadResume( tr_torrent *    tor,
                                uint64_t        fieldsToLoad,
                                const tr_ctor * ctor );
 
+/**
+ * Load a torrent's progress from its resume file
+ */
 uint64_t tr_torrentLoadProgress( tr_torrent * tor );
 
 void     tr_torrentSaveResume( const tr_torrent * tor );

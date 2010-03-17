@@ -511,6 +511,7 @@ tr_torrentSaveResume( const tr_torrent * tor )
 
     if( !tr_isTorrent( tor ) )
         return;
+    /* Don't save the torrent state if we lost all the files. */
     if( tor->failedState == TR_FAILED_FILE )
         return;
 

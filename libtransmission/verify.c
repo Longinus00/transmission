@@ -282,10 +282,13 @@ tr_verifyAdd( tr_torrent *      tor,
 
     if( !torrentHasAnyLocalData( tor ) )
     {
-        /* we haven't downloaded anything for this torrent yet...
-         * no need to leave it waiting in the back of the queue.
-         * we can mark it as all-missing from here and fire
-         * the "done" callback */
+        /* Check to see if any data had previously been downloaded.
+         * If no, everything is fine and we can fire the "done" callback.
+         * Otherwise, tag the torrent as missing all its files and hope the
+         * user will correct it by making sure the files are there the next
+         * time they try to start the torrent. If there are still no files
+         * then assume the user wants to restart the torrent from scratch.
+         */
         const tr_bool hadAny = tr_cpHaveTotal( &tor->completion ) != 0;
 
         if( hadAny ){
@@ -313,6 +316,8 @@ tr_verifyAdd( tr_torrent *      tor,
         fireCheckDone( tor, verify_done_cb );
     }
     else if( tor->failedState == TR_FAILED_FILE ){
+        /* If the files were previously missing and are now back, reload the
+         * progress from the resume file. */
         tr_torinf( tor, "Reloading local data" );
         tor->failedState = TR_FAILED_NONE;
 
@@ -332,7 +337,7 @@ tr_verifyAdd( tr_torrent *      tor,
     else if( tr_torrentCountUncheckedPieces( tor ) == 0
         || ( tor->failedState == TR_FAILED_TIME ) )
     {
-        /* doesn't need to be checked... */
+        /* doesn't need to be checked... fow now... */
         fireCheckDone( tor, verify_done_cb );
     }
     else
