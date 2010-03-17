@@ -489,7 +489,6 @@ loadProgress( tr_benc *    dict,
         { 
             tr_torrentUncheck( tor );
             tr_tordbg( tor, "Torrent needs to be verified - %s", err );
-            tor->failedState = TR_FAILED_TIME;
         }
 
         tr_free( curMTimes );
