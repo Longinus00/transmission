@@ -96,10 +96,6 @@ static const struct tr_option options[] =
     { 'i', "bind-address-ipv4", "Where to listen for peer connections", "i", 1, "<ipv4 address>" },
     { 'I', "bind-address-ipv6", "Where to listen for peer connections", "I", 1, "<ipv6 address>" },
     { 'r', "rpc-bind-address", "Where to listen for RPC connections", "r", 1, "<ipv4 address>" },
-    { 's', "start-paused", "Start added torrents paused.", "s", 0, NULL },
-    { 'S', "no-start-paused", "Start added torrents unpaused", "S", 0, NULL },
-    { 920, "trash-torrent", "Delete torrents after adding", "h", 0, NULL },
-    { 921, "no-trash-torrent", "Do not delete torrents after adding", "H", 0, NULL },
     { 953, "global-seedratio", "All torrents, unless overridden by a per-torrent setting, should seed until a specific ratio", "gsr", 1, "ratio" },
     { 954, "no-global-seedratio", "All torrents, unless overridden by a per-torrent setting, should seed regardless of ratio", "GSR", 0, NULL },
     { 0, NULL, NULL, NULL, 0, NULL }
@@ -400,14 +396,6 @@ main( int argc, char ** argv )
                       break;
             case 'r':
                       tr_bencDictAddStr( &settings, TR_PREFS_KEY_RPC_BIND_ADDRESS, optarg );
-                      break;
-            case 's': tr_bencDictAddBool( &settings, TR_PREFS_KEY_START, FALSE );
-                      break;
-            case 'S': tr_bencDictAddBool( &settings, TR_PREFS_KEY_START, TRUE );
-                      break;
-            case 920: tr_bencDictAddBool( &settings, TR_PREFS_KEY_TRASH_ORIGINAL, TRUE );
-                      break;
-            case 921: tr_bencDictAddBool( &settings, TR_PREFS_KEY_TRASH_ORIGINAL, FALSE );
                       break;
 	    case 953:
 		      tr_bencDictAddReal( &settings, TR_PREFS_KEY_RATIO, atof(optarg) );
