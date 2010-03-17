@@ -428,7 +428,7 @@ onRPCChanged( tr_session            * session,
             break;
 
         case TR_RPC_SESSION_CHANGED:
-            tr_sessionGetSettings( session, pref_get_all() );
+            tr_sessionGetSettings( session, pref_get_all( ) );
             break;
 
         case TR_RPC_TORRENT_CHANGED:

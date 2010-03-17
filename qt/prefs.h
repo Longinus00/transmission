@@ -44,7 +44,7 @@ class Prefs: public QObject
             ASKQUIT,
             SORT_MODE,
             SORT_REVERSED,
-            MINIMAL_VIEW,
+            COMPACT_VIEW,
             FILTERBAR,
             STATUSBAR,
             STATUSBAR_STATS,
