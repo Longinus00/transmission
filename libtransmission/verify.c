@@ -274,12 +274,6 @@ torrentHasAnyLocalData( const tr_torrent * tor )
     return hasAny;
 }
 
-tr_bool
-tr_torrentHasAnyLocalData( const tr_torrent * tor )
-{
-    return torrentHasAnyLocalData( tor );
-}
-
 void
 tr_verifyAdd( tr_torrent *      tor,
               tr_verify_done_cb verify_done_cb )

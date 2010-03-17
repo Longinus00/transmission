@@ -54,7 +54,7 @@ enum
 };
 enum
 {
-    VERIFY_INTERVAL_SECS = 5
+    VERIFY_INTERVAL_SECS = 30
 };
 
 
