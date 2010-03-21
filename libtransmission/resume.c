@@ -584,7 +584,7 @@ loadFromFile( tr_torrent * tor,
     assert( tr_isTorrent( tor ) );
 
     if( loadBencFromFile( tor, &top ) )
-        return fieldsToLoad;
+        return fieldsLoaded;
 
     if( ( fieldsToLoad & TR_FR_CORRUPT )
       && tr_bencDictFindInt( &top, KEY_CORRUPT, &i ) )
