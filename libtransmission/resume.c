@@ -502,9 +502,10 @@ loadProgress( tr_benc *    dict,
 void
 tr_torrentSaveResume( tr_torrent * tor )
 {
-    tr_benc top;
-    char *  filename;
     int err;
+    tr_benc top;
+    char * filename;
+
 
     if( !tr_isTorrent( tor ) )
         return;
@@ -535,8 +536,7 @@ tr_torrentSaveResume( tr_torrent * tor )
     saveRatioLimits( &top, tor );
 
     filename = getResumeFilename( tor );
-    err = tr_bencToFile( &top, TR_FMT_BENC, filename );
-    if( err )
+    if(( err = tr_bencToFile( &top, TR_FMT_BENC, filename )))
         tr_torrentSetLocalError( tor, "Unable to save resume file: %s", tr_strerror( err ) );
     tr_free( filename );
 
