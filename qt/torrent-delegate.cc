@@ -67,7 +67,7 @@ TorrentDelegate :: progressString( const Torrent& tor ) const
     const uint64_t haveTotal( tor.haveTotal( ) );
     QString str;
     double seedRatio;
-    bool hasSeedRatio;
+    bool hasSeedRatio = tor.getSeedRatio( seedRatio );
 
     if( !isDone )
     {
@@ -85,14 +85,15 @@ TorrentDelegate :: progressString( const Torrent& tor ) const
            %3 is a percentage of the two,
            %4 is how much we've uploaded,
            %5 is our upload-to-download ratio */
-        str = tr( "%1 of %2 (%3%), uploaded %4 (Ratio: %5)" )
+        str = tr( "%1 of %2 (%3%), uploaded %4 (Ratio: %5 Goal %6)" )
               .arg( Utils::sizeToString( haveTotal ) )
               .arg( Utils::sizeToString( tor.sizeWhenDone( ) ) )
               .arg( tor.percentDone( ) * 100.0, 0, 'f', 2 )
               .arg( Utils::sizeToString( tor.uploadedEver( ) ) )
-              .arg( Utils::ratioToString( tor.ratio( ) ) );
+              .arg( Utils::ratioToString( tor.ratio( ) ) )
+              .arg( Utils::ratioToString( seedRatio ) );
     }
-    else if(( hasSeedRatio = tor.getSeedRatio( seedRatio )))
+    else if( hasSeedRatio )
     {
         /* %1 is the torrent's total size,
            %2 is how much we've uploaded,
