@@ -67,20 +67,29 @@ getProgressString( const tr_torrent * tor,
     }
     else if( !isSeed )
     {
-        str = g_strdup_printf(
+        char * tmpStr;
+        tmpStr = g_strdup_printf(
             /* %1$s is how much we've got,
                %2$s is the torrent's total size,
                %3$.2f%% is a percentage of the two,
                %4$s is how much we've uploaded,
-               %5$s is our upload-to-download ratio
-               $6$s is the ratio we want to reach before we stop uploading */
-            _( "%1$s of %2$s (%3$.2f%%), uploaded %4$s (Ratio: %5$s Goal: %6$s)" ),
+               %5$s is our upload-to-download ratio */
+            _( "%1$s of %2$s (%3$.2f%%), uploaded %4$s (Ratio: %5$s" ),
             tr_strlsize( buf1, haveTotal, sizeof( buf1 ) ),
             tr_strlsize( buf2, info->totalSize, sizeof( buf2 ) ),
             tr_truncd( torStat->percentComplete * 100.0, 2 ),
             tr_strlsize( buf3, torStat->uploadedEver, sizeof( buf3 ) ),
-            tr_strlratio( buf4, torStat->ratio, sizeof( buf4 ) ) ),
-            tr_strlratio( buf5, seedRatio, sizeof( buf5 ) ) );
+            tr_strlratio( buf4, torStat->ratio, sizeof( buf4 ) ) );
+        if( hasSeedRatio )
+        {
+            /* buf5 is the ratio we want to reach before we stop uploading */
+            tr_strlratio( buf5, seedRatio, sizeof( buf5 ) );
+            str = g_strconcat( tmpStr, " Goal: ", buf5, ")", NULL );
+        }
+        else
+            str = g_strconcat( tmpStr, ")" , NULL );
+
+        g_free( tmpStr );
     }
     else if( hasSeedRatio )
     {
