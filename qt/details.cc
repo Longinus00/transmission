@@ -622,18 +622,18 @@ Details :: refresh( )
                     str += "\n";
                     if( trackerStat.lastAnnounceSucceeded )
                     {
-                        str += QString( "Got a list of %1 peers %2 ago" )
+                        str += tr( "Got a list of %1 peers %2 ago" )
                             .arg( trackerStat.lastAnnouncePeerCount )
                             .arg( tstr );
                     }
                     else if( trackerStat.lastAnnounceTimedOut )
                     {
-                        str += QString( "Peer list request timed out %1 ago; will retry" )
+                        str += tr( "Peer list request timed out %1 ago; will retry" )
                             .arg( tstr );
                     }
                     else
                     {
-                        str += QString( "Got an error %1 ago" )
+                        str += tr( "Got an error %1 ago" )
                             .arg( tstr );
                     }
                 }
@@ -650,7 +650,7 @@ Details :: refresh( )
                         {
                             const QString tstr( timeToStringRounded( trackerStat.nextAnnounceTime - now ) );
                             str += "\n";
-                            str += QString( "Asking for more peers in %1" )
+                            str += tr( "Asking for more peers in %1" )
                                 .arg( tstr );
                         }
                         break;
@@ -662,7 +662,7 @@ Details :: refresh( )
                         {
                             const QString tstr( timeToStringRounded( now - trackerStat.lastAnnounceStartTime ) );
                             str += "\n";
-                            str += QString( "Asking for more peers now... %1" )
+                            str += tr( "Asking for more peers now... %1" )
                                 .arg( tstr );
                         }
                         break;
@@ -675,14 +675,14 @@ Details :: refresh( )
                         str += "\n";
                         if( trackerStat.lastScrapeSucceeded )
                         {
-                            str += QString( "Tracker had %1 seeders and %2 leechers %3 ago" )
+                            str += tr( "Tracker had %1 seeders and %2 leechers %3 ago" )
                                 .arg( trackerStat.seederCount )
                                 .arg( trackerStat.leecherCount )
                                 .arg( tstr );
                         }
                         else
                         {
-                            str += QString( "Got a scrape error %1 ago" )
+                            str += tr( "Got a scrape error %1 ago" )
                                 .arg( tstr );
                         }
                     }
@@ -694,19 +694,19 @@ Details :: refresh( )
                             {
                                 const QString tstr( timeToStringRounded( trackerStat.nextScrapeTime - now ) );
                                 str += "\n";
-                                str += QString( "Asking for peer counts in %1" )
+                                str += tr( "Asking for peer counts in %1" )
                                     .arg( tstr );
                             }
                             break;
                         case TR_TRACKER_QUEUED:
                             str += "\n";
-                            str += QString( "Queued to ask for peer counts" );
+                            str += tr( "Queued to ask for peer counts" );
                             break;
                         case TR_TRACKER_ACTIVE:
                             {
                                 const QString tstr( timeToStringRounded( now - trackerStat.lastScrapeStartTime ) );
                                 str += "\n";
-                                str += QString( "Asking for peer counts now... %1" )
+                                str += tr( "Asking for peer counts now... %1" )
                                     .arg( tstr );
                             }
                             break;
