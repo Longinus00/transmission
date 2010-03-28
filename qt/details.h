@@ -58,6 +58,7 @@ class Details: public QDialog
         QWidget * createOptionsTab( );
 
     private:
+        QString timeToStringRounded( int seconds );
         QString trimToDesiredWidth( const QString& str );
         void enableWhenChecked( QCheckBox *, QWidget * );
 
@@ -108,7 +109,9 @@ class Details: public QDialog
         QLabel * myAnnounceResponseLabel;
         QLabel * myAnnounceManualLabel;
 
+        QTreeWidget * myTrackerTree;
         QTreeWidget * myPeerTree;
+        QMap<QString,QTreeWidgetItem*> myTrackerStats;
         QMap<QString,QTreeWidgetItem*> myPeers;
         QWidgetList myWidgets;
 
