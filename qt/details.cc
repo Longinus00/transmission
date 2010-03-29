@@ -44,6 +44,7 @@
 #include "details.h"
 #include "file-tree.h"
 #include "hig.h"
+#include "prefs.h"
 #include "session.h"
 #include "squeezelabel.h"
 #include "torrent.h"
@@ -117,9 +118,10 @@ class PeerItem: public QTreeWidgetItem
 ****
 ***/
 
-Details :: Details( Session& session, TorrentModel& model, QWidget * parent ):
+Details :: Details( Session& session, Prefs& prefs, TorrentModel& model, QWidget * parent ):
     QDialog( parent, Qt::Dialog ),
     mySession( session ),
+    myPrefs( prefs ),
     myModel( model ),
     myHavePendingRefresh( false )
 {
@@ -597,6 +599,8 @@ Details :: refresh( )
     QMap<QString,QTreeWidgetItem*> trackers2;
     QList<QTreeWidgetItem*> newItems2;
     const time_t now( time( 0 ) );
+    const bool showBackup = myPrefs.getBool( Prefs::BACKUP_TRACKERS );
+    const bool showScrape = myPrefs.getBool( Prefs::TRACKER_SCRAPES );
     foreach( const Torrent * t, torrents )
     {
         const QString idStr( QString::number( t->id( ) ) );
@@ -614,7 +618,7 @@ Details :: refresh( )
                 newItems2 << item;
             }
             str = trackerStat.host;
-            //if( showBackup || !trackerStat.isBackup)
+            if( showBackup || !trackerStat.isBackup)
             {
                 if( trackerStat.hasAnnounced )
                 {
@@ -643,7 +647,7 @@ Details :: refresh( )
                         if( trackerStat.hasAnnounced )
                         {
                             str += "\n";
-                            str += ( "No updates scheduled" );
+                            str += tr( "No updates scheduled" );
                         }
                         break;
                     case TR_TRACKER_WAITING:
@@ -656,7 +660,7 @@ Details :: refresh( )
                         break;
                     case TR_TRACKER_QUEUED:
                         str += "\n";
-                        str += ( "Queued to ask for more peers" );
+                        str += tr( "Queued to ask for more peers" );
                         break;
                     case TR_TRACKER_ACTIVE:
                         {
@@ -667,7 +671,7 @@ Details :: refresh( )
                         }
                         break;
                 }
-                //if( showScrape )
+                if( showScrape )
                 {
                     if( trackerStat.hasScraped )
                     {
@@ -875,6 +879,18 @@ Details :: createInfoTab( )
 ***/
 
 void
+Details :: onShowBackupTrackersToggled( bool val )
+{
+    myPrefs.set( Prefs::BACKUP_TRACKERS, val );
+}
+
+void
+Details :: onShowTrackerScrapesToggled( bool val )
+{
+    myPrefs.set( Prefs::TRACKER_SCRAPES, val );
+}
+
+void
 Details :: onHonorsSessionLimitsToggled( bool val )
 {
     mySession.torrentSet( myIds, "honorsSessionLimits", val );
@@ -1037,8 +1053,10 @@ Details :: createOptionsTab( )
 QWidget *
 Details :: createTrackerTab( )
 {
+    QCheckBox * c;
     QWidget * top = new QWidget;
     QVBoxLayout * v = new QVBoxLayout( top );
+
     v->setSpacing( HIG :: PAD_BIG );
     v->setContentsMargins( HIG::PAD_BIG, HIG::PAD_BIG, HIG::PAD_BIG, HIG::PAD_BIG );
 
@@ -1049,9 +1067,20 @@ Details :: createTrackerTab( )
     myTrackerTree->setSelectionMode( QTreeWidget::NoSelection );
     myTrackerTree->setRootIsDecorated( false );
     myTrackerTree->setTextElideMode( Qt::ElideRight );
+    myTrackerTree->setAlternatingRowColors( true );
     v->addWidget( myTrackerTree, 1 );
 
-    myTrackerTree->setAlternatingRowColors( true );
+    c = new QCheckBox( tr( "Show &more details" ) );
+    c->setChecked( myPrefs.getBool( Prefs::TRACKER_SCRAPES ) );
+    myShowTrackerScrapesCheck = c;
+    v->addWidget( c, 1 );
+    connect( c, SIGNAL(clicked(bool)), this, SLOT(onShowTrackerScrapesToggled(bool)) );
+
+    c = new QCheckBox( tr( "Show &backup trackers" ) );
+    c->setChecked( myPrefs.getBool( Prefs::BACKUP_TRACKERS ) );
+    myShowBackupTrackersCheck = c;
+    v->addWidget( c, 1 );
+    connect( c, SIGNAL(clicked(bool)), this, SLOT(onShowBackupTrackersToggled(bool)) );
 
     return top;
 }
