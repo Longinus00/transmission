@@ -15,7 +15,6 @@
 #include <glib/gi18n.h>
 #include <libtransmission/transmission.h>
 #include <libtransmission/utils.h> /* tr_truncd() */
-#include "conf.h"
 #include "hig.h"
 #include "icons.h"
 #include "torrent-cell-renderer.h"
@@ -202,23 +201,9 @@ getShortStatusString( const tr_torrent  * tor,
 
     switch( torStat->activity )
     {
-        case TR_STATUS_STOPPED:{
-            double seedRatioLimit = 0;
-            if( tr_torrentGetRatioMode( tor ) == TR_RATIOLIMIT_GLOBAL ){
-                if( pref_flag_get( TR_PREFS_KEY_RATIO_ENABLED ) )
-                    seedRatioLimit = pref_double_get( TR_PREFS_KEY_RATIO );
-            }
-            else
-                seedRatioLimit = tr_torrentGetRatioLimit( tor );
-
-            if( seedRatioLimit > 0
-                && seedRatioLimit <= torStat->ratio
-                && torStat->leftUntilDone == 0)
-                g_string_assign( gstr, _( "Finished" ) );
-            else
-                g_string_assign( gstr, _( "Paused" ) );
+        case TR_STATUS_STOPPED:
+            g_string_assign( gstr, _( "Paused" ) );
             break;
-        }
 
         case TR_STATUS_CHECK_WAIT:
             g_string_assign( gstr, _( "Waiting to verify local data" ) );
