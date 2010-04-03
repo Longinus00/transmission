@@ -599,8 +599,8 @@ Details :: refresh( )
     QMap<QString,QTreeWidgetItem*> trackers2;
     QList<QTreeWidgetItem*> newItems2;
     const time_t now( time( 0 ) );
-    const bool showBackup = myPrefs.getBool( Prefs::BACKUP_TRACKERS );
-    const bool showScrape = myPrefs.getBool( Prefs::TRACKER_SCRAPES );
+    const bool showBackup = myPrefs.getBool( Prefs::SHOW_BACKUP_TRACKERS );
+    const bool showScrape = myPrefs.getBool( Prefs::SHOW_TRACKER_SCRAPES );
     foreach( const Torrent * t, torrents )
     {
         const QString idStr( QString::number( t->id( ) ) );
@@ -881,13 +881,13 @@ Details :: createInfoTab( )
 void
 Details :: onShowBackupTrackersToggled( bool val )
 {
-    myPrefs.set( Prefs::BACKUP_TRACKERS, val );
+    myPrefs.set( Prefs::SHOW_BACKUP_TRACKERS, val );
 }
 
 void
 Details :: onShowTrackerScrapesToggled( bool val )
 {
-    myPrefs.set( Prefs::TRACKER_SCRAPES, val );
+    myPrefs.set( Prefs::SHOW_TRACKER_SCRAPES, val );
 }
 
 void
@@ -1071,13 +1071,13 @@ Details :: createTrackerTab( )
     v->addWidget( myTrackerTree, 1 );
 
     c = new QCheckBox( tr( "Show &more details" ) );
-    c->setChecked( myPrefs.getBool( Prefs::TRACKER_SCRAPES ) );
+    c->setChecked( myPrefs.getBool( Prefs::SHOW_TRACKER_SCRAPES ) );
     myShowTrackerScrapesCheck = c;
     v->addWidget( c, 1 );
     connect( c, SIGNAL(clicked(bool)), this, SLOT(onShowTrackerScrapesToggled(bool)) );
 
     c = new QCheckBox( tr( "Show &backup trackers" ) );
-    c->setChecked( myPrefs.getBool( Prefs::BACKUP_TRACKERS ) );
+    c->setChecked( myPrefs.getBool( Prefs::SHOW_BACKUP_TRACKERS ) );
     myShowBackupTrackersCheck = c;
     v->addWidget( c, 1 );
     connect( c, SIGNAL(clicked(bool)), this, SLOT(onShowBackupTrackersToggled(bool)) );
