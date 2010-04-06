@@ -41,7 +41,7 @@ Torrent._MetaDataFields = [ 'addedDate', 'comment', 'creator', 'dateCreated',
 Torrent._DynamicFields = [ 'downloadedEver', 'error', 'errorString', 'eta',
     'haveUnchecked', 'haveValid', 'leftUntilDone', 'metadataPercentComplete', 'peersConnected',
     'peersGettingFromUs', 'peersSendingToUs', 'rateDownload', 'rateUpload',
-    'recheckProgress', 'sizeWhenDone', 'status', 'trackerStats',
+    'recheckProgress', 'sizeWhenDone', 'status', 'trackerStats', 'desiredAvailable',
     'uploadedEver', 'uploadRatio', 'seedRatioLimit', 'seedRatioMode', 'downloadDir', 'isFinished' ]
 
 Torrent.prototype =
@@ -392,6 +392,7 @@ Torrent.prototype =
 		this._state                   = data.status;
 		this._download_dir            = data.downloadDir;
 		this._metadataPercentComplete = data.metadataPercentComplete;
+		this._desiredAvailable        = data.desiredAvailable;
 		this._isFinishedSeeding       = data.isFinished;
 
 		if (data.fileStats)
@@ -563,13 +564,15 @@ Torrent.prototype =
 			c = Math.formatBytes( this._size );
 			c += ', uploaded ';
 			c += Math.formatBytes( this._upload_total );
-			c += ' (Ratio ';
+			c += ' (Ratio: ';
 			if(this._upload_ratio > -1)
-				c += Math.round(this._upload_ratio*100)/100;
+				c += Math.toFixed( this._upload_ratio, 2 );
 			else if(this._upload_ratio == -2)
 				c += 'Inf';
 			else
 				c += '0';
+			if(this.seedRatioLimit() > -1)
+				c += ' Goal: ' + Math.toFixed( this.seedRatioLimit(), 2 );
 			c += ')';
 			c += eta;
 			progress_details = c;
