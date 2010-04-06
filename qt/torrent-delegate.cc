@@ -183,7 +183,10 @@ TorrentDelegate :: shortStatusString( const Torrent& tor ) const
     switch( tor.getActivity( ) )
     {
         case TR_STATUS_STOPPED:
-            str = tr( "Paused" );
+            if( tor.isFinished( ) )
+                str = tr( "Finished" );
+            else
+                str = tr( "Paused" );
             break;
 
         case TR_STATUS_CHECK_WAIT:
