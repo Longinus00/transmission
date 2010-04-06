@@ -262,7 +262,10 @@ tr_torrent_status_str( TrTorrent * gtor )
             break;
 
         case TR_STATUS_STOPPED:
-            top = g_strdup( _( "Stopped" ) );
+            if( st->finished )
+                top = g_strdup( _( "Finished" ) );
+            else
+                top = g_strdup( _( "Stopped" ) );
             break;
 
         default:
