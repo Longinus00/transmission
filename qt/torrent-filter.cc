@@ -99,6 +99,8 @@ TorrentFilter :: lessThan( const QModelIndex& left, const QModelIndex& right ) c
             break;
         case SortMode :: SORT_BY_ACTIVITY:
             less = compareDouble( a->downloadSpeed() + a->uploadSpeed(), b->downloadSpeed() + b->uploadSpeed() );
+            if( !less )
+                less = a->uploadedEver() - b->uploadedEver();
             break;
         case SortMode :: SORT_BY_AGE:
             less = a->dateAdded().toTime_t() - b->dateAdded().toTime_t();
@@ -106,31 +108,34 @@ TorrentFilter :: lessThan( const QModelIndex& left, const QModelIndex& right ) c
         case SortMode :: SORT_BY_ID:
             less = a->id() - b->id();
             break;
-        case SortMode :: SORT_BY_RATIO:
-            less = a->compareRatio( *b ) - 0;
-            break;
-        case SortMode :: SORT_BY_PROGRESS:
-            less = compareDouble( a->percentDone(), b->percentDone() );
-            break;
-        case SortMode :: SORT_BY_ETA:
-            less = a->compareETA( *b ) - 0;
-            break;
         case SortMode :: SORT_BY_STATE:
             if( a->hasError() != b->hasError() )
                 less = a->hasError();
             else
                 less = a->getActivity() - b->getActivity();
+            if( less )
+                break;
+        case SortMode :: SORT_BY_PROGRESS:
+            less = compareDouble( a->percentDone(), b->percentDone() );
+            if( less )
+                break;
+        case SortMode :: SORT_BY_RATIO:
+            less = a->compareRatio( *b );
+            break;
+        case SortMode :: SORT_BY_ETA:
+            less = a->compareETA( *b );
             break;
         case SortMode :: SORT_BY_TRACKER:
-            less = a->compareTracker( *b ) - 0;
+            less = a->compareTracker( *b );
             break;
         default:
             break;
     }
     if( less == 0 )
-        return a->name().compare( b->name(), Qt::CaseInsensitive ) > 0;
-    else
-        return less < 0;
+        less = -a->name().compare( b->name(), Qt::CaseInsensitive );
+    if( less == 0 )
+        less = a->id() - b->id();
+    return less < 0;
 }
 
 int
