@@ -676,12 +676,7 @@ Torrent :: activityString( ) const
         case TR_STATUS_CHECK:      str = tr( "Verifying local data" ); break;
         case TR_STATUS_DOWNLOAD:   str = tr( "Downloading" ); break;
         case TR_STATUS_SEED:       str = tr( "Seeding" ); break;
-        case TR_STATUS_STOPPED:
-            if( isFinished( ) )
-                str = tr( "Finished" );
-            else
-                str = tr( "Paused" );
-            break;
+        case TR_STATUS_STOPPED:    str = isFinished() ? tr( "Finished" ): tr( "Paused" ); break;
     }
 
     return str;

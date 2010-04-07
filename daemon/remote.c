@@ -1020,8 +1020,7 @@ getStatusString( tr_benc * t, char * buf, size_t buflen )
     else switch( status )
     {
         case TR_STATUS_STOPPED:
-            if( tr_bencDictFindBool( t, "isFinished", &boolVal )
-                && boolVal )
+            if( tr_bencDictFindBool( t, "isFinished", &boolVal ) && boolVal )
                 tr_strlcpy( buf, "Finished", buflen );
             else
                 tr_strlcpy( buf, "Stopped", buflen );
