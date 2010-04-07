@@ -85,6 +85,13 @@ TorrentFilter :: setText( QString text )
 ****
 ***/
 
+template <typename T>
+int compare( const T a, const T b ) {
+    if( a < b ) return -1;
+    if( b < a ) return 1;
+    return 0;
+}
+
 bool
 TorrentFilter :: lessThan( const QModelIndex& left, const QModelIndex& right ) const
 {
@@ -95,28 +102,28 @@ TorrentFilter :: lessThan( const QModelIndex& left, const QModelIndex& right ) c
     switch( myPrefs.get<SortMode>(Prefs::SORT_MODE).mode() )
     {
         case SortMode :: SORT_BY_SIZE:
-            less = a->sizeWhenDone() - b->sizeWhenDone();
+            less = compare( a->sizeWhenDone(), b->sizeWhenDone() );
             break;
         case SortMode :: SORT_BY_ACTIVITY:
-            less = compareDouble( a->downloadSpeed() + a->uploadSpeed(), b->downloadSpeed() + b->uploadSpeed() );
+            less = compare( a->downloadSpeed() + a->uploadSpeed(), b->downloadSpeed() + b->uploadSpeed() );
             if( !less )
-                less = a->uploadedEver() - b->uploadedEver();
+                less = compare( a->uploadedEver(), b->uploadedEver() );
             break;
         case SortMode :: SORT_BY_AGE:
-            less = a->dateAdded().toTime_t() - b->dateAdded().toTime_t();
+            less = compare( a->dateAdded().toTime_t(), b->dateAdded().toTime_t() );
             break;
         case SortMode :: SORT_BY_ID:
-            less = a->id() - b->id();
+            less = compare( a->id(), b->id() );
             break;
         case SortMode :: SORT_BY_STATE:
             if( a->hasError() != b->hasError() )
                 less = a->hasError();
             else
-                less = a->getActivity() - b->getActivity();
+                less = compare( a->getActivity(), b->getActivity() );
             if( less )
                 break;
         case SortMode :: SORT_BY_PROGRESS:
-            less = compareDouble( a->percentDone(), b->percentDone() );
+            less = compare( a->percentDone(), b->percentDone() );
             if( less )
                 break;
         case SortMode :: SORT_BY_RATIO:
@@ -134,17 +141,10 @@ TorrentFilter :: lessThan( const QModelIndex& left, const QModelIndex& right ) c
     if( less == 0 )
         less = -a->name().compare( b->name(), Qt::CaseInsensitive );
     if( less == 0 )
-        less = a->id() - b->id();
+        less = compare( a->hashString(), b->hashString() );
     return less < 0;
 }
 
-int
-TorrentFilter :: compareDouble( double a, double b ) const
-{
-    if( a < b ) return -1;
-    if( a > b ) return 1;
-    return 0;
-}
 
 /***
 ****

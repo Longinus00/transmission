@@ -29,7 +29,6 @@ class Speed
         void setBps( double bps ) { _kbps = bps/1024.0; }
         Speed operator+( const Speed& that ) const { return Speed( kbps() + that.kbps() ); }
         Speed& operator+=( const Speed& that ) { _kbps += that._kbps; return *this; }
-        operator double() const { return kbps(); }
         bool operator<( const Speed& that ) const { return kbps() < that.kbps(); }
 };
 
