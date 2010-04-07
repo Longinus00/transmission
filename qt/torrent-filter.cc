@@ -90,48 +90,56 @@ TorrentFilter :: lessThan( const QModelIndex& left, const QModelIndex& right ) c
 {
     const Torrent * a = sourceModel()->data( left, TorrentModel::TorrentRole ).value<const Torrent*>();
     const Torrent * b = sourceModel()->data( right, TorrentModel::TorrentRole ).value<const Torrent*>();
-    bool less;
+    int less = 0;
 
     switch( myPrefs.get<SortMode>(Prefs::SORT_MODE).mode() )
     {
         case SortMode :: SORT_BY_SIZE:
-            less = a->sizeWhenDone() < b->sizeWhenDone();
+            less = a->sizeWhenDone() - b->sizeWhenDone();
             break;
         case SortMode :: SORT_BY_ACTIVITY:
-            less = a->downloadSpeed() + a->uploadSpeed() < b->downloadSpeed() + b->uploadSpeed();
+            less = compareDouble( a->downloadSpeed() + a->uploadSpeed(), b->downloadSpeed() + b->uploadSpeed() );
             break;
         case SortMode :: SORT_BY_AGE:
-            less = a->dateAdded() < b->dateAdded();
+            less = a->dateAdded().toTime_t() - b->dateAdded().toTime_t();
             break;
         case SortMode :: SORT_BY_ID:
-            less = a->id() < b->id();
+            less = a->id() - b->id();
             break;
         case SortMode :: SORT_BY_RATIO:
-            less = a->compareRatio( *b ) < 0;
+            less = a->compareRatio( *b ) - 0;
             break;
         case SortMode :: SORT_BY_PROGRESS:
-            less = a->percentDone() < b->percentDone();
+            less = compareDouble( a->percentDone(), b->percentDone() );
             break;
         case SortMode :: SORT_BY_ETA:
-            less = a->compareETA( *b ) < 0;
+            less = a->compareETA( *b ) - 0;
             break;
         case SortMode :: SORT_BY_STATE:
             if( a->hasError() != b->hasError() )
                 less = a->hasError();
             else
-                less = a->getActivity() < b->getActivity();
+                less = a->getActivity() - b->getActivity();
             break;
         case SortMode :: SORT_BY_TRACKER:
-            less = a->compareTracker( *b ) < 0;
+            less = a->compareTracker( *b ) - 0;
             break;
         default:
-            less = a->name().compare( b->name(), Qt::CaseInsensitive ) > 0;
             break;
     }
-
-    return less;
+    if( less == 0 )
+        return a->name().compare( b->name(), Qt::CaseInsensitive ) > 0;
+    else
+        return less < 0;
 }
 
+int
+TorrentFilter :: compareDouble( double a, double b ) const
+{
+    if( a < b ) return -1;
+    if( a > b ) return 1;
+    return 0;
+}
 
 /***
 ****

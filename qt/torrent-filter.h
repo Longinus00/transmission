@@ -40,6 +40,7 @@ class TorrentFilter: public QSortFilterProxyModel
 
     private slots:
         void refreshPref( int key );
+        int compareDouble( double a, double b ) const;
 
     protected:
         virtual bool filterAcceptsRow( int, const QModelIndex& ) const;
