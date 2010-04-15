@@ -759,18 +759,16 @@ TrMainWindow :: refreshActionSensitivity( )
         const QModelIndex modelIndex( model->index( row, 0 ) );
         assert( model == modelIndex.model( ) );
         const Torrent * tor( model->data( modelIndex, TorrentModel::TorrentRole ).value<const Torrent*>( ) );
-        if( tor ) {
-            const bool isSelected( selectionModel->isSelected( modelIndex ) );
-            const bool isPaused( tor->isPaused( ) );
-            if( isSelected )
-                ++selected;
-            if( isPaused )
-                ++ paused;
-            if( isSelected && isPaused )
-                ++selectedAndPaused;
-            if( tor->canManualAnnounce( ) )
-                ++canAnnounce;
-        }
+        const bool isSelected( selectionModel->isSelected( modelIndex ) );
+        const bool isPaused( tor->isPaused( ) );
+        if( isSelected )
+            ++selected;
+        if( isPaused )
+            ++ paused;
+        if( isSelected && isPaused )
+            ++selectedAndPaused;
+        if( tor->canManualAnnounce( ) )
+            ++canAnnounce;
     }
 
     const bool haveSelection( selected > 0 );
