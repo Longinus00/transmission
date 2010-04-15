@@ -73,6 +73,7 @@ intltool-update.in
 libtransmission/bencode-test
 libtransmission/blocklist-test
 libtransmission/clients-test
+libtransmission/history-test
 libtransmission/json-test
 libtransmission/magnet-test
 libtransmission/peer-msgs-test

@@ -264,11 +264,7 @@ tr_sessionGetDefaultSettings( const char * configDir, tr_benc * d )
     tr_bencDictAddInt ( d, TR_PREFS_KEY_PEER_SOCKET_TOS,          atoi( TR_DEFAULT_PEER_SOCKET_TOS_STR ) );
     tr_bencDictAddBool( d, TR_PREFS_KEY_PEX_ENABLED,              TRUE );
     tr_bencDictAddBool( d, TR_PREFS_KEY_PORT_FORWARDING,          TRUE );
-#ifdef HAVE_FALLOCATE64
-    tr_bencDictAddInt ( d, TR_PREFS_KEY_PREALLOCATION,            TR_PREALLOCATE_FULL );
-#else
     tr_bencDictAddInt ( d, TR_PREFS_KEY_PREALLOCATION,            TR_PREALLOCATE_SPARSE );
-#endif
     tr_bencDictAddStr ( d, TR_PREFS_KEY_PROXY,                    "" );
     tr_bencDictAddBool( d, TR_PREFS_KEY_PROXY_AUTH_ENABLED,       FALSE );
     tr_bencDictAddBool( d, TR_PREFS_KEY_PROXY_ENABLED,            FALSE );
@@ -281,7 +277,7 @@ tr_sessionGetDefaultSettings( const char * configDir, tr_benc * d )
     tr_bencDictAddBool( d, TR_PREFS_KEY_RENAME_PARTIAL_FILES,     TRUE );
     tr_bencDictAddBool( d, TR_PREFS_KEY_RPC_AUTH_REQUIRED,        FALSE );
     tr_bencDictAddStr ( d, TR_PREFS_KEY_RPC_BIND_ADDRESS,         "0.0.0.0" );
-    tr_bencDictAddBool( d, TR_PREFS_KEY_RPC_ENABLED,              TRUE );
+    tr_bencDictAddBool( d, TR_PREFS_KEY_RPC_ENABLED,              FALSE );
     tr_bencDictAddStr ( d, TR_PREFS_KEY_RPC_PASSWORD,             "" );
     tr_bencDictAddStr ( d, TR_PREFS_KEY_RPC_USERNAME,             "" );
     tr_bencDictAddStr ( d, TR_PREFS_KEY_RPC_WHITELIST,            TR_DEFAULT_RPC_WHITELIST );
@@ -300,6 +296,8 @@ tr_sessionGetDefaultSettings( const char * configDir, tr_benc * d )
     tr_bencDictAddInt ( d, TR_PREFS_KEY_UPLOAD_SLOTS_PER_TORRENT, 14 );
     tr_bencDictAddStr ( d, TR_PREFS_KEY_BIND_ADDRESS_IPV4,        TR_DEFAULT_BIND_ADDRESS_IPV4 );
     tr_bencDictAddStr ( d, TR_PREFS_KEY_BIND_ADDRESS_IPV6,        TR_DEFAULT_BIND_ADDRESS_IPV6 );
+    tr_bencDictAddBool( d, TR_PREFS_KEY_START,                    TRUE );
+    tr_bencDictAddBool( d, TR_PREFS_KEY_TRASH_ORIGINAL,           FALSE );
 
     tr_free( incompleteDir );
 }
@@ -362,6 +360,8 @@ tr_sessionGetSettings( tr_session * s, struct tr_benc * d )
     tr_bencDictAddInt ( d, TR_PREFS_KEY_UPLOAD_SLOTS_PER_TORRENT, s->uploadSlotsPerTorrent );
     tr_bencDictAddStr ( d, TR_PREFS_KEY_BIND_ADDRESS_IPV4,        tr_ntop_non_ts( &s->public_ipv4->addr ) );
     tr_bencDictAddStr ( d, TR_PREFS_KEY_BIND_ADDRESS_IPV6,        tr_ntop_non_ts( &s->public_ipv6->addr ) );
+    tr_bencDictAddBool( d, TR_PREFS_KEY_START,                    !tr_sessionGetPaused( s ) );
+    tr_bencDictAddBool( d, TR_PREFS_KEY_TRASH_ORIGINAL,           tr_sessionGetDeleteSource( s ) );
 }
 
 tr_bool
@@ -710,6 +710,10 @@ sessionSetImpl( void * vdata )
         session->peerSocketTOS = i;
     if( tr_bencDictFindBool( settings, TR_PREFS_KEY_BLOCKLIST_ENABLED, &boolVal ) )
         tr_blocklistSetEnabled( session, boolVal );
+    if( tr_bencDictFindBool( settings, TR_PREFS_KEY_START, &boolVal ) )
+        tr_sessionSetPaused( session, !boolVal );
+    if( tr_bencDictFindBool( settings, TR_PREFS_KEY_TRASH_ORIGINAL, &boolVal) )
+        tr_sessionSetDeleteSource( session, boolVal );
 
     /* files and directories */
     if( tr_bencDictFindInt( settings, TR_PREFS_KEY_PREALLOCATION, &i ) )
@@ -1056,22 +1060,12 @@ tr_sessionGetPortForwarding( const tr_session * session )
 ****
 ***/
 
-static void
-updateSeedRatio( tr_session * session )
-{
-    tr_torrent * tor = NULL;
-
-    while(( tor = tr_torrentNext( session, tor )))
-        tor->needsSeedRatioCheck = TRUE;
-}
-
 void
 tr_sessionSetRatioLimited( tr_session * session, tr_bool isLimited )
 {
     assert( tr_isSession( session ) );
 
     session->isRatioLimited = isLimited;
-    updateSeedRatio( session );
 }
 
 void
@@ -1080,7 +1074,6 @@ tr_sessionSetRatioLimit( tr_session * session, double desiredRatio )
     assert( tr_isSession( session ) );
 
     session->desiredRatio = desiredRatio;
-    updateSeedRatio( session );
 }
 
 tr_bool
@@ -1251,7 +1244,7 @@ turtleCheckClock( tr_session * s, struct tr_turtle_info * t )
 }
 
 /* Called after the turtle's fields are loaded from an outside source.
- * It initializes the implementation fields 
+ * It initializes the implementation fields
  * and turns on turtle mode if the clock settings say to. */
 static void
 turtleBootstrap( tr_session * session, struct tr_turtle_info * turtle )
@@ -1500,6 +1493,42 @@ tr_sessionGetPeerLimitPerTorrent( const tr_session * session )
     assert( tr_isSession( session ) );
 
     return session->peerLimitPerTorrent;
+}
+
+/***
+****
+***/
+
+void
+tr_sessionSetPaused( tr_session * session, tr_bool isPaused )
+{
+    assert( tr_isSession( session ) );
+
+    session->pauseAddedTorrent = isPaused;
+}
+
+tr_bool
+tr_sessionGetPaused( const tr_session * session )
+{
+    assert( tr_isSession( session ) );
+
+    return session->pauseAddedTorrent;
+}
+
+void
+tr_sessionSetDeleteSource( tr_session * session, tr_bool deleteSource )
+{
+    assert( tr_isSession( session ) );
+
+    session->deleteSourceTorrent = deleteSource;
+}
+
+tr_bool
+tr_sessionGetDeleteSource( const tr_session * session )
+{
+    assert( tr_isSession( session ) );
+
+    return session->deleteSourceTorrent;
 }
 
 /***

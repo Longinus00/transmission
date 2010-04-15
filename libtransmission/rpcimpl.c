@@ -30,6 +30,9 @@
 #include "version.h"
 #include "web.h"
 
+#define RPC_VERSION     9
+#define RPC_VERSION_MIN 1
+
 #define RECENTLY_ACTIVE_SECONDS 60
 
 #define TR_N_ELEMENTS( ary ) ( sizeof( ary ) / sizeof( *ary ) )
@@ -504,6 +507,8 @@ addField( const tr_torrent * tor, tr_benc * d, const char * key )
         tr_bencDictAddBool( d, key, tr_torrentUsesSessionLimits( tor ) );
     else if( tr_streq( key, keylen, "id" ) )
         tr_bencDictAddInt( d, key, st->id );
+    else if( tr_streq( key, keylen, "isFinished" ) )
+        tr_bencDictAddBool( d, key, st->finished );
     else if( tr_streq( key, keylen, "isPrivate" ) )
         tr_bencDictAddBool( d, key, tr_torrentIsPrivate( tor ) );
     else if( tr_streq( key, keylen, "leftUntilDone" ) )
@@ -1204,6 +1209,10 @@ sessionSet( tr_session               * session,
         tr_sessionSetRatioLimit( session, d );
     if( tr_bencDictFindBool( args_in, "seedRatioLimited", &boolVal ) )
         tr_sessionSetRatioLimited( session, boolVal );
+    if( tr_bencDictFindBool( args_in, TR_PREFS_KEY_START, &boolVal ) )
+        tr_sessionSetPaused( session, !boolVal );
+    if( tr_bencDictFindBool( args_in, TR_PREFS_KEY_TRASH_ORIGINAL, &boolVal ) )
+        tr_sessionSetDeleteSource( session, boolVal );
     if( tr_bencDictFindInt( args_in, TR_PREFS_KEY_DSPEED, &i ) )
         tr_sessionSetSpeedLimit( session, TR_DOWN, i );
     if( tr_bencDictFindBool( args_in, TR_PREFS_KEY_DSPEED_ENABLED, &boolVal ) )
@@ -1304,10 +1313,12 @@ sessionGet( tr_session               * s,
     tr_bencDictAddInt ( d, TR_PREFS_KEY_PEER_PORT_RANDOM_ON_START, tr_sessionGetPeerPortRandomOnStart( s ) );
     tr_bencDictAddBool( d, TR_PREFS_KEY_PORT_FORWARDING, tr_sessionIsPortForwardingEnabled( s ) );
     tr_bencDictAddBool( d, TR_PREFS_KEY_RENAME_PARTIAL_FILES, tr_sessionIsIncompleteFileNamingEnabled( s ) );
-    tr_bencDictAddInt ( d, "rpc-version", 8 );
-    tr_bencDictAddInt ( d, "rpc-version-minimum", 1 );
+    tr_bencDictAddInt ( d, "rpc-version", RPC_VERSION );
+    tr_bencDictAddInt ( d, "rpc-version-minimum", RPC_VERSION_MIN );
     tr_bencDictAddReal( d, "seedRatioLimit", tr_sessionGetRatioLimit( s ) );
     tr_bencDictAddBool( d, "seedRatioLimited", tr_sessionIsRatioLimited( s ) );
+    tr_bencDictAddBool( d, TR_PREFS_KEY_START, !tr_sessionGetPaused( s ) );
+    tr_bencDictAddBool( d, TR_PREFS_KEY_TRASH_ORIGINAL, tr_sessionGetDeleteSource( s ) );
     tr_bencDictAddInt ( d, TR_PREFS_KEY_USPEED, tr_sessionGetSpeedLimit( s, TR_UP ) );
     tr_bencDictAddBool( d, TR_PREFS_KEY_USPEED_ENABLED, tr_sessionIsSpeedLimited( s, TR_UP ) );
     tr_bencDictAddInt ( d, TR_PREFS_KEY_DSPEED, tr_sessionGetSpeedLimit( s, TR_DOWN ) );

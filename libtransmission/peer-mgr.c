@@ -83,7 +83,7 @@ enum
     MINIMUM_RECONNECT_INTERVAL_SECS = 5,
 
     /** how long we'll let requests we've made linger before we cancel them */
-    REQUEST_TTL_SECS = 60,
+    REQUEST_TTL_SECS = 120,
 
     CANCEL_HISTORY_SEC = 120
 };
@@ -798,7 +798,7 @@ isInEndgame( Torrent * t )
 
 /**
  * This function is useful for sanity checking,
- * but is too expensive even for nightly builds... 
+ * but is too expensive even for nightly builds...
  * let's leave it disabled but add an easy hook to compile it back in
  */
 #if 0
@@ -1311,8 +1311,6 @@ peerCallbackFunc( void * vpeer, void * vevent, void * vt )
             /* update our atom */
             if( peer && e->wasPieceData )
                 peer->atom->piece_data_time = now;
-
-            tor->needsSeedRatioCheck = TRUE;
 
             break;
         }
@@ -2437,7 +2435,7 @@ rechokeDownloads( Torrent * t )
                 bad[badCount++] = peer;
         }
     }
-    
+
     t->interestedCount = 0;
 
     /* We've decided (1) how many peers to be interested in,
@@ -2463,7 +2461,7 @@ rechokeDownloads( Torrent * t )
     }
 
 /*fprintf( stderr, "num interested: %d\n", t->interestedCount );*/
-        
+
     /* cleanup */
     tr_free( untested );
     tr_free( good );
@@ -2915,7 +2913,6 @@ reconnectTorrent( Torrent * t )
         tr_free( mustClose );
 
         /* decide how many peers can we try to add in this pass */
-    
         maxCandidates = maxPerPulse;
         if( tr_announcerHasBacklog( t->manager->session->announcer ) )
             maxCandidates /= 2;
@@ -3297,12 +3294,8 @@ bandwidthPulse( int foo UNUSED, short bar UNUSED, void * vmgr )
 
     /* possibly stop torrents that have seeded enough */
     tor = NULL;
-    while(( tor = tr_torrentNext( mgr->session, tor ))) {
-        if( tor->needsSeedRatioCheck ) {
-            tor->needsSeedRatioCheck = FALSE;
-            tr_torrentCheckSeedRatio( tor );
-        }
-    }
+    while(( tor = tr_torrentNext( mgr->session, tor )))
+        tr_torrentCheckSeedRatio( tor );
 
     /* run the completeness check for any torrents that need it */
     tor = NULL;
