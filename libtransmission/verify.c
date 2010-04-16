@@ -282,17 +282,20 @@ tr_verifyAdd( tr_torrent *      tor,
 
     if( !torrentHasAnyLocalData( tor ) )
     {
-        /* Check to see if any data had previously been downloaded.
-         * If no, everything is fine and we can fire the "done" callback.
-         * Otherwise, tag the torrent as missing all its files and hope the
-         * user will correct it by making sure the files are there the next
-         * time they try to start the torrent. If there are still no files
-         * then assume the user wants to restart the torrent from scratch.
-         */
+        /* Check to see if any data has previously been downloaded. */
         const tr_bool hadAny = tr_cpHaveTotal( &tor->completion ) != 0;
 
         if( hadAny ){
-            if( tor->failedState == TR_FAILED_FILE ){
+            /* There used to be data and it is now gone */
+
+            if( tor->failedState != TR_FAILED_FILE ){
+                /* Complain about missing files  */
+                tr_torerr( tor, "Can't find local data" );
+                tor->failedState = TR_FAILED_FILE;
+            }
+            else {
+                /* This is the second time the file has been missing so assume
+                 * that the user wants to start from scratch */  
                 tr_piece_index_t i;
                 tr_torinf( tor, "Reseting progress" );
                 for( i=0; i<tor->info.pieceCount; ++i ) {
@@ -302,13 +305,10 @@ tr_verifyAdd( tr_torrent *      tor,
                 tor->failedState = TR_FAILED_NONE;
                 tr_torrentSetDirty( tor );
             }
-            else {
-                tr_torerr( tor, "Can't find local data" );
-                tor->failedState = TR_FAILED_FILE;
-            }
         }
         else
         {
+            /* Never had any data to begin */
             tr_torrentUncheck( tor );
             tor->failedState = TR_FAILED_NONE;
         }
@@ -316,13 +316,14 @@ tr_verifyAdd( tr_torrent *      tor,
         fireCheckDone( tor, verify_done_cb );
     }
     else if( tor->failedState == TR_FAILED_FILE ){
-        /* If the files were previously missing and are now back, reload the
-         * progress from the resume file. */
+        /* The previously missing files and are now back.
+         * Reload the progress from the resume file. */
         tr_torinf( tor, "Reloading local data" );
         tor->failedState = TR_FAILED_NONE;
 
         if( tr_torrentLoadProgress( tor ) != TR_FR_PROGRESS )
         {
+            /* LoadProgress failed so we should zero the progress to be safe */
             tr_piece_index_t i;
             tr_torerr( tor, "Reloading local data failed, resetting all progress" );
             for( i=0; i<tor->info.pieceCount; ++i ) {
@@ -337,7 +338,7 @@ tr_verifyAdd( tr_torrent *      tor,
     else if( tr_torrentCountUncheckedPieces( tor ) == 0
         || ( tor->failedState == TR_UNCHECKED_PIECES ) )
     {
-        /* doesn't need to be checked... fow now... */
+        /* Torrent doesn't need to be checked, yet... */
         fireCheckDone( tor, verify_done_cb );
     }
     else
