@@ -94,6 +94,7 @@ struct tr_session
     tr_bool                      isIncompleteDirEnabled;
     tr_bool                      pauseAddedTorrent;
     tr_bool                      deleteSourceTorrent;
+    tr_bool                      autoVerify;
 
     tr_benc                      removedTorrents;
 

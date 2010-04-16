@@ -335,7 +335,7 @@ tr_verifyAdd( tr_torrent *      tor,
         fireCheckDone( tor, verify_done_cb );
     }
     else if( tr_torrentCountUncheckedPieces( tor ) == 0
-        || ( tor->failedState == TR_FAILED_TIME ) )
+        || ( tor->failedState == TR_UNCHECKED_PIECES ) )
     {
         /* doesn't need to be checked... fow now... */
         fireCheckDone( tor, verify_done_cb );

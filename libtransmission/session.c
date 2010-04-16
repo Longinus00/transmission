@@ -298,6 +298,7 @@ tr_sessionGetDefaultSettings( const char * configDir, tr_benc * d )
     tr_bencDictAddStr ( d, TR_PREFS_KEY_BIND_ADDRESS_IPV6,        TR_DEFAULT_BIND_ADDRESS_IPV6 );
     tr_bencDictAddBool( d, TR_PREFS_KEY_START,                    TRUE );
     tr_bencDictAddBool( d, TR_PREFS_KEY_TRASH_ORIGINAL,           FALSE );
+    tr_bencDictAddBool( d, TR_PREFS_KEY_AUTOVERIFY_TORRENTS,      FALSE );
 
     tr_free( incompleteDir );
 }
@@ -362,6 +363,7 @@ tr_sessionGetSettings( tr_session * s, struct tr_benc * d )
     tr_bencDictAddStr ( d, TR_PREFS_KEY_BIND_ADDRESS_IPV6,        tr_ntop_non_ts( &s->public_ipv6->addr ) );
     tr_bencDictAddBool( d, TR_PREFS_KEY_START,                    !tr_sessionGetPaused( s ) );
     tr_bencDictAddBool( d, TR_PREFS_KEY_TRASH_ORIGINAL,           tr_sessionGetDeleteSource( s ) );
+    tr_bencDictAddBool( d, TR_PREFS_KEY_AUTOVERIFY_TORRENTS,      tr_sessionGetAutoVerify( s ) );
 }
 
 tr_bool
@@ -480,14 +482,13 @@ onVerifyTimer( int foo UNUSED, short bar UNUSED, void *vsession )
     tr_torrent * tor = NULL;
     tr_session * session = vsession;
 
-    if( !tr_verifyInProgress() )
+    if( tr_sessionGetAutoVerify( session ) && !tr_verifyInProgress() )
     {
         while(( tor = tr_torrentNext( session, tor ) ))
         {
-            if( tor->failedState == TR_FAILED_TIME
+            if( tor->failedState == TR_UNCHECKED_PIECES
                 && tor->error != TR_STAT_LOCAL_ERROR
-                && tr_cpHaveTotal( &tor->completion ) != 0
-                && tr_torrentGetActivity( tor ) != TR_STATUS_DOWNLOAD )
+                && tr_cpHaveTotal( &tor->completion ) != 0 )
             {
                 tr_torinf( tor, "Queueing suspect torrent for verify" );
                 tr_torrentVerify( tor );
@@ -714,6 +715,8 @@ sessionSetImpl( void * vdata )
         tr_sessionSetPaused( session, !boolVal );
     if( tr_bencDictFindBool( settings, TR_PREFS_KEY_TRASH_ORIGINAL, &boolVal) )
         tr_sessionSetDeleteSource( session, boolVal );
+    if( tr_bencDictFindBool( settings, TR_PREFS_KEY_AUTOVERIFY_TORRENTS, &boolVal) )
+        tr_sessionSetAutoVerify( session, boolVal );
 
     /* files and directories */
     if( tr_bencDictFindInt( settings, TR_PREFS_KEY_PREALLOCATION, &i ) )
@@ -1531,6 +1534,22 @@ tr_sessionGetDeleteSource( const tr_session * session )
     return session->deleteSourceTorrent;
 }
 
+
+void
+tr_sessionSetAutoVerify( tr_session * session, tr_bool autoVerify )
+{
+    assert( tr_isSession( session ) );
+
+    session->autoVerify = autoVerify;
+}
+
+tr_bool
+tr_sessionGetAutoVerify( const tr_session * session )
+{
+    assert( tr_isSession( session ) );
+
+    return session->autoVerify;
+}
 /***
 ****
 ***/

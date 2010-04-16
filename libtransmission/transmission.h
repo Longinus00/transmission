@@ -160,6 +160,7 @@ const char* tr_getDefaultDownloadDir( void );
 #define TR_PREFS_KEY_ALT_SPEED_TIME_ENABLED     "alt-speed-time-enabled"
 #define TR_PREFS_KEY_ALT_SPEED_TIME_END         "alt-speed-time-end"
 #define TR_PREFS_KEY_ALT_SPEED_TIME_DAY         "alt-speed-time-day"
+#define TR_PREFS_KEY_AUTOVERIFY_TORRENTS        "autoverify-torrents"
 #define TR_PREFS_KEY_BIND_ADDRESS_IPV4          "bind-address-ipv4"
 #define TR_PREFS_KEY_BIND_ADDRESS_IPV6          "bind-address-ipv6"
 #define TR_PREFS_KEY_BLOCKLIST_ENABLED          "blocklist-enabled"
@@ -733,6 +734,9 @@ tr_bool    tr_sessionGetPaused        ( const tr_session * );
 
 void       tr_sessionSetDeleteSource  ( tr_session *, tr_bool deleteSource );
 tr_bool    tr_sessionGetDeleteSource  ( const tr_session * );
+
+void       tr_sessionSetAutoVerify    ( tr_session *, tr_bool autoVerify );
+tr_bool    tr_sessionGetAutoVerify    ( const tr_session * );
 
 /**
  *  Load all the torrents in tr_getTorrentDir().

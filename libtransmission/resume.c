@@ -57,7 +57,9 @@
 
 #define KEY_PROGRESS_MTIMES    "mtimes"
 #define KEY_PROGRESS_BITFIELD  "bitfield"
+#define KEY_PROGRESS_CBITFIELD "cbitfield"
 #define KEY_PROGRESS_HAVE      "have"
+#define KEY_PROGRESS_CHECKED   "checked"
 
 enum
 {
@@ -391,11 +393,7 @@ saveProgress( tr_benc *          dict,
     mtimes = tr_torrentGetMTimes( tor, &n );
     m = tr_bencDictAddList( p, KEY_PROGRESS_MTIMES, n );
     for( i = 0; i < n; ++i )
-    {
-        if( !tr_torrentIsFileChecked( tor, i ) )
-            mtimes[i] = ~(time_t)0; /* force a recheck */
         tr_bencListAddInt( m, mtimes[i] );
-    }
 
     /* add the progress */
     if( tor->completeness == TR_SEED )
@@ -403,6 +401,14 @@ saveProgress( tr_benc *          dict,
     bitfield = tr_cpBlockBitfield( &tor->completion );
     tr_bencDictAddRaw( p, KEY_PROGRESS_BITFIELD,
                        bitfield->bits, bitfield->byteCount );
+
+    /* add the checked pieces */
+    if( tr_torrentCountUncheckedPieces( tor ) == 0 )
+        tr_bencDictAddStr( p, KEY_PROGRESS_CHECKED, "all" );
+    bitfield = &tor->checkedPieces;
+    tr_bencDictAddRaw( p, KEY_PROGRESS_CBITFIELD,
+                       bitfield->bits, bitfield->byteCount );
+
 
     /* cleanup */
     tr_free( mtimes );
@@ -425,6 +431,32 @@ loadProgress( tr_benc *    dict,
         size_t          n;
         time_t *        curMTimes = tr_torrentGetMTimes( tor, &n );
 
+        err = NULL;
+        if( tr_bencDictFindStr( p, KEY_PROGRESS_CHECKED, &str ) )
+        {
+            if( !strcmp( str, "all" ) )
+                tr_bitfieldAddRange( &tor->checkedPieces, 0, tor->info.pieceCount );
+            else
+                err = "Invalid value for CHECKED";
+        }
+        else if( tr_bencDictFindRaw( p, KEY_PROGRESS_CBITFIELD, &raw, &rawlen ) )
+        {
+            tr_bitfield tmp;
+            tmp.byteCount = rawlen;
+            tmp.bitCount = tmp.byteCount * 8;
+            tmp.bits = (uint8_t*) raw;
+            if( tor->checkedPieces.byteCount == tmp.byteCount )
+                memcpy( tor->checkedPieces.bits, tmp.bits, tmp.byteCount );
+            else
+                err = "Error loading cbitfield";
+        }
+        else err = "Couldn't find 'checked' or 'cbitfield'";
+        if( err != NULL )
+        {
+            tr_torrentUncheck( tor );
+            tr_tordbg( tor, "Torrent needs to be verified - %s", err );
+        }
+
         if( tr_bencDictFindList( p, KEY_PROGRESS_MTIMES, &m )
           && ( n == tor->info.fileCount )
           && ( n == tr_bencListSize( m ) ) )
@@ -440,21 +472,17 @@ loadProgress( tr_benc *    dict,
                         "File #%zu needs to be verified - couldn't find benc entry",
                         i );
                     tr_torrentSetFileChecked( tor, i, FALSE );
-                    tor->failedState = TR_FAILED_TIME;
                 }
                 else
                 {
                     const time_t t = (time_t) tmp;
-                    if( t == curMTimes[i] )
-                        tr_torrentSetFileChecked( tor, i, TRUE );
-                    else
+                    if( t != curMTimes[i] )
                     {
                         tr_tordbg(
                             tor,
                             "File #%zu needs to be verified - times %lu and %lu don't match",
                             i, t, curMTimes[i] );
                         tr_torrentSetFileChecked( tor, i, FALSE );
-                        tor->failedState = TR_FAILED_TIME;
                     }
                 }
             }
@@ -464,7 +492,6 @@ loadProgress( tr_benc *    dict,
             tr_torrentUncheck( tor );
             tr_tordbg(
                 tor, "Torrent needs to be verified - unable to find mtimes" );
-            tor->failedState = TR_FAILED_TIME;
         }
 
         err = NULL;
@@ -493,6 +520,12 @@ loadProgress( tr_benc *    dict,
 
         tr_free( curMTimes );
         ret = TR_FR_PROGRESS;
+    }
+
+    if( tr_torrentCountUncheckedPieces( tor ) != 0 )
+    {
+        tor->failedState = TR_UNCHECKED_PIECES;
+        tr_tordbg( tor, "Torrent has %d unchecked pieces", tr_torrentCountUncheckedPieces( tor ) );
     }
 
     return ret;
