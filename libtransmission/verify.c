@@ -295,7 +295,7 @@ tr_verifyAdd( tr_torrent *      tor,
             }
             else {
                 /* This is the second time the file has been missing so assume
-                 * that the user wants to start from scratch */  
+                 * that the user wants to start from scratch */
                 tr_piece_index_t i;
                 tr_torinf( tor, "Reseting progress" );
                 for( i=0; i<tor->info.pieceCount; ++i ) {
