@@ -42,7 +42,7 @@ Torrent._DynamicFields = [ 'downloadedEver', 'error', 'errorString', 'eta',
     'haveUnchecked', 'haveValid', 'leftUntilDone', 'metadataPercentComplete', 'peersConnected',
     'peersGettingFromUs', 'peersSendingToUs', 'rateDownload', 'rateUpload',
     'recheckProgress', 'sizeWhenDone', 'status', 'trackerStats', 'desiredAvailable',
-    'uploadedEver', 'uploadRatio', 'seedRatioLimit', 'seedRatioMode', 'downloadDir' ]
+    'uploadedEver', 'uploadRatio', 'seedRatioLimit', 'seedRatioMode', 'downloadDir', 'isFinished' ]
 
 Torrent.prototype =
 {
@@ -243,7 +243,8 @@ Torrent.prototype =
 		switch( this.state() ) {
 			case Torrent._StatusSeeding:        return 'Seeding';
 			case Torrent._StatusDownloading:    return 'Downloading';
-			case Torrent._StatusPaused:         return 'Paused';
+			case Torrent._StatusPaused:         return this._isFinishedSeeding ? 'Seeding complete'
+                                                                               : 'Paused';
 			case Torrent._StatusChecking:       return 'Verifying local data';
 			case Torrent._StatusWaitingToCheck: return 'Waiting to verify';
 			default:                            return 'error';
@@ -391,6 +392,7 @@ Torrent.prototype =
 		this._state                   = data.status;
 		this._download_dir            = data.downloadDir;
 		this._metadataPercentComplete = data.metadataPercentComplete;
+		this._isFinishedSeeding       = data.isFinished;
 		this._desiredAvailable        = data.desiredAvailable;
 
 		if (data.fileStats)
@@ -546,14 +548,31 @@ Torrent.prototype =
 		}
 		else
 		{
+			var eta = '';
+
+			if( this.isActive( ) && this.seedRatioLimit( ) > 0 )
+			{
+				eta = ' - ';
+				if (this._eta < 0 || this._eta >= Torrent._InfiniteTimeRemaining )
+					eta += 'remaining time unknown';
+				else
+					eta += Math.formatSeconds(this._eta) + ' remaining';
+			}
+
 			// Create the 'progress details' label
 			// Eg: '698.05 MB, uploaded 8.59 GB (Ratio: 12.3)'
 			c = Math.formatBytes( this._size );
 			c += ', uploaded ';
 			c += Math.formatBytes( this._upload_total );
 			c += ' (Ratio ';
-			c += Math.round(this._upload_ratio*100)/100;
+			if(this._upload_ratio > -1)
+				c += Math.round(this._upload_ratio*100)/100;
+			else if(this._upload_ratio == -2)
+				c += 'Inf';
+			else
+				c += '0';
 			c += ')';
+			c += eta;
 			progress_details = c;
 
 			var status = this.isActive() ? 'complete' : 'complete_stopped';

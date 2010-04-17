@@ -2,6 +2,10 @@ EXTRA_DIST = \
     Credits.rtf \
     AboutWindow.xib \
     BlocklistStatusWindow.xib \
+    InfoFileView.xib \
+    InfoPeersView.xib \
+    InfoTrackersView.xib \
+    InfoWindow.xib \
     MessageWindow.xib \
     StatsWindow.xib \
     Defaults.plist \
@@ -23,6 +27,8 @@ EXTRA_DIST = \
     zh_TW.lproj \
     AboutWindowController.h \
     AboutWindowController.m \
+    AddMagnetWindowController.h \
+    AddMagnetWindowController.m \
     AddWindowController.h \
     AddWindowController.m \
     Badger.h \
@@ -75,6 +81,19 @@ EXTRA_DIST = \
     InfoTabButtonCell.m \
     InfoTextField.h \
     InfoTextField.m \
+    InfoActivityViewController.h \
+    InfoActivityViewController.m \
+    InfoFileViewController.h \
+    InfoFileViewController.m \
+    InfoGeneralViewController.h \
+    InfoGeneralViewController.m \
+    InfoOptionsViewController.h \
+    InfoOptionsViewController.m \
+    InfoPeersViewController.h \
+    InfoPeersViewController.m \
+    InfoTrackersViewController.h \
+    InfoTrackersViewController.m \
+    InfoViewController.h \
     InfoWindowController.h \
     InfoWindowController.m \
     main.m \

@@ -205,6 +205,8 @@ const char* tr_getDefaultDownloadDir( void );
 #define TR_PREFS_KEY_USPEED                     "speed-limit-up"
 #define TR_PREFS_KEY_UMASK                      "umask"
 #define TR_PREFS_KEY_UPLOAD_SLOTS_PER_TORRENT   "upload-slots-per-torrent"
+#define TR_PREFS_KEY_START                      "start-added-torrents"
+#define TR_PREFS_KEY_TRASH_ORIGINAL             "trash-original-torrent-files"
 
 
 /**
@@ -554,7 +556,7 @@ void          tr_sessionSetProxyPassword( tr_session * session,
 ***
 **/
 
-/** @brief Used by tr_sessionGetStats() and tr_sessionGetCumulativeStats() to give bandwidth statistics */ 
+/** @brief Used by tr_sessionGetStats() and tr_sessionGetCumulativeStats() to give bandwidth statistics */
 typedef struct tr_session_stats
 {
     float       ratio;        /* TR_RATIO_INF, TR_RATIO_NA, or total up/down */
@@ -726,6 +728,11 @@ uint16_t   tr_sessionGetPeerLimitPerTorrent( const tr_session * );
 tr_priority_t   tr_torrentGetPriority( const tr_torrent * );
 void            tr_torrentSetPriority( tr_torrent *, tr_priority_t );
 
+void       tr_sessionSetPaused        ( tr_session *, tr_bool isPaused );
+tr_bool    tr_sessionGetPaused        ( const tr_session * );
+
+void       tr_sessionSetDeleteSource  ( tr_session *, tr_bool deleteSource );
+tr_bool    tr_sessionGetDeleteSource  ( const tr_session * );
 
 /**
  *  Load all the torrents in tr_getTorrentDir().
@@ -1041,7 +1048,13 @@ enum
     TR_LOC_ERROR
 };
 
-/** @brief Tell transmsision where to find this torrent's local data */
+/**
+ * @brief Tell transmsision where to find this torrent's local data.
+ *
+ * if move_from_previous_location is `true', the torrent's incompleteDir
+ * will be clobberred s.t. additional files being added will be saved
+ * to the torrent's downloadDir.
+ */
 void tr_torrentSetLocation( tr_torrent  * torrent,
                             const char  * location,
                             tr_bool       move_from_previous_location,
@@ -1348,6 +1361,21 @@ typedef struct tr_peer_stat
     float    rateToPeer;
     float    rateToClient;
 
+
+/***
+****  THESE NEXT FOUR FIELDS ARE EXPERIMENTAL.
+****  They're currently being used in the GTK+ client to help tune the new download congestion code
+****  and probably won't make the cut for 2.0.
+***/
+    /* how many blocks we've sent to this peer in the last 120 seconds */
+    uint32_t  blocksToPeer;
+    /* how many blocks this client's sent to us in the last 120 seconds */
+    uint32_t  blocksToClient;
+    /* how many requests to this peer that we've cancelled in the last 120 seconds */
+    uint32_t  cancelsToPeer;
+    /* how many requests this peer made of us, then cancelled, in the last 120 seconds */
+    uint32_t  cancelsToClient;
+
     /* how many requests the peer has made that we haven't responded to yet */
     int      pendingReqsToClient;
 
@@ -1447,6 +1475,9 @@ typedef struct
        if "hasAnnounced" is false, this field is undefined */
     tr_bool lastScrapeSucceeded;
 
+    /* whether or not the last scrape timed out. */
+    tr_bool lastScrapeTimedOut;
+
     /* when the last scrape was completed.
        if "hasScraped" is false, this field is undefined */
     time_t lastScrapeTime;
@@ -1467,7 +1498,7 @@ typedef struct
 
     /* which tier this tracker is in */
     int tier;
-    
+
     /* used to match to a tr_tracker_info */
     uint32_t id;
 }
@@ -1687,10 +1718,10 @@ typedef struct tr_stat
         @see tr_stat.leftUntilDone */
     float    percentDone;
 
-    /** The percentage of the actual ratio to the seed ratio.  This will be
-        equal to 1 if the ratio is reached or the torrent is set to seed forever.
+    /** How much has been uploaded to satisfy the seed ratio.
+        This is 1 if the ratio is reached or the torrent is set to seed forever.
         Range is [0..1] */
-    float    percentRatio;
+    float    seedRatioPercentDone;
 
     /** Speed all data being sent for this torrent. (KiB/s)
         This includes piece data, protocol messages, and TCP overhead */
@@ -1790,6 +1821,10 @@ typedef struct tr_stat
 
     /** The last time we uploaded or downloaded piece data on this torrent. */
     time_t    activityDate;
+    
+    /** A torrent is considered finished if it has met its seed ratio.
+        As a result, only paused torrents can be finished. */
+    tr_bool   finished;
 }
 tr_stat;
 

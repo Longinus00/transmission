@@ -28,6 +28,7 @@ RPC._TurtleTimeEnabled      = 'alt-speed-time-enabled';
 RPC._TurtleTimeBegin        = 'alt-speed-time-begin';
 RPC._TurtleTimeEnd          = 'alt-speed-time-end';
 RPC._TurtleTimeDay          = 'alt-speed-time-day';
+RPC._StartAddedTorrent      = 'start-added-torrents';
 
 function TransmissionRemote( controller )
 {
@@ -105,6 +106,12 @@ TransmissionRemote.prototype =
 	loadDaemonPrefs: function( callback, async ) {
 		var tr = this._controller;
 		var o = { method: 'session-get' };
+		this.sendRequest( o, callback, async );
+	},
+
+	loadDaemonStats: function( callback, async ) {
+		var tr = this._controller;
+		var o = { method: 'session-stats' };
 		this.sendRequest( o, callback, async );
 	},
 

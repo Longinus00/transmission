@@ -69,10 +69,12 @@
         
         fTorrentFile = [[torrentFile stringByExpandingTildeInPath] retain];
         
-        fDeleteTorrent = deleteTorrent;
-        fDeleteEnable = canToggleDelete;
+        fDeleteTorrentInitial = deleteTorrent;
+        fDeleteEnableInitial = canToggleDelete;
         
         fGroupValue = [torrent groupValue];
+        
+        [fVerifyIndicator setUsesThreadedAnimation: YES];
     }
     return self;
 }
@@ -98,20 +100,20 @@
     [self setGroupsMenu];
     [fGroupPopUp selectItemWithTag: fGroupValue];
     
-    NSInteger priorityTag;
+    NSInteger priorityIndex;
     switch ([fTorrent priority])
     {
-        case TR_PRI_HIGH: priorityTag = POPUP_PRIORITY_HIGH; break;
-        case TR_PRI_NORMAL: priorityTag = POPUP_PRIORITY_NORMAL; break;
-        case TR_PRI_LOW: priorityTag = POPUP_PRIORITY_LOW; break;
+        case TR_PRI_HIGH: priorityIndex = POPUP_PRIORITY_HIGH; break;
+        case TR_PRI_NORMAL: priorityIndex = POPUP_PRIORITY_NORMAL; break;
+        case TR_PRI_LOW: priorityIndex = POPUP_PRIORITY_LOW; break;
         default: NSAssert1(NO, @"Unknown priority for adding torrent: %d", [fTorrent priority]);
     }
-    [fPriorityPopUp selectItemWithTag: priorityTag];
+    [fPriorityPopUp selectItemAtIndex: priorityIndex];
     
     [fStartCheck setState: [[NSUserDefaults standardUserDefaults] boolForKey: @"AutoStartDownload"] ? NSOnState : NSOffState];
     
-    [fDeleteCheck setState: fDeleteTorrent ? NSOnState : NSOffState];
-    [fDeleteCheck setEnabled: fDeleteEnable];
+    [fDeleteCheck setState: fDeleteTorrentInitial ? NSOnState : NSOffState];
+    [fDeleteCheck setEnabled: fDeleteEnableInitial];
     
     if (fDestination)
         [self setDestinationPath: fDestination];
@@ -215,7 +217,7 @@
 - (void) changePriority: (id) sender
 {
     tr_priority_t priority;
-    switch ([sender tag])
+    switch ([sender indexOfSelectedItem])
     {
         case POPUP_PRIORITY_HIGH: priority = TR_PRI_HIGH; break;
         case POPUP_PRIORITY_NORMAL: priority = TR_PRI_NORMAL; break;
@@ -268,11 +270,20 @@
     
     if ([fTorrent isChecking])
     {
+        const BOOL waiting = [fTorrent isCheckingWaiting];
+        [fVerifyIndicator setIndeterminate: waiting];
+        if (!waiting)
+            [fVerifyIndicator setDoubleValue: [fTorrent checkingProgress]];
+        else
+            [fVerifyIndicator startAnimation: self];
+        
         [fVerifyIndicator setHidden: NO];
-        [fVerifyIndicator setDoubleValue: [fTorrent checkingProgress]];
     }
     else
+    {
+        [fVerifyIndicator stopAnimation: self];
         [fVerifyIndicator setHidden: YES];
+    }
 }
 
 - (void) confirmAdd

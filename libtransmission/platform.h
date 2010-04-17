@@ -32,8 +32,6 @@
  #define MAX_PATH_LENGTH  2048
 #endif
 
-#define MAX_STACK_ARRAY_SIZE 7168
-
 /**
  * @addtogroup tr_session Session
  * @{
@@ -43,7 +41,7 @@
  * @brief invoked by tr_sessionInit() to set up the locations of the resume, torrent, and clutch directories.
  * @see tr_getResumeDir()
  * @see tr_getTorrentDir()
- * @see tr_getClutchDir()
+ * @see tr_getWebClientDir()
  */
 void tr_setConfigDir( tr_session * session, const char * configDir );
 
@@ -53,8 +51,8 @@ const char * tr_getResumeDir( const tr_session * );
 /** @brief return the directory where .torrent files are stored */
 const char * tr_getTorrentDir( const tr_session * );
 
-/** @brief return the directory where Clutch's web ui files are kept */
-const char * tr_getClutchDir( const tr_session * );
+/** @brief return the directory where the Web Client's web ui files are kept */
+const char * tr_getWebClientDir( const tr_session * );
 
 /** @} */
 

@@ -202,7 +202,6 @@ tr_torrentSetRatioMode( tr_torrent *  tor, tr_ratiolimit mode )
     if( mode != tor->ratioLimitMode )
     {
         tor->ratioLimitMode = mode;
-        tor->needsSeedRatioCheck = TRUE;
 
         tr_torrentSetDirty( tor );
     }
@@ -224,8 +223,6 @@ tr_torrentSetRatioLimit( tr_torrent * tor, double desiredRatio )
     if( (int)(desiredRatio*100.0) != (int)(tor->desiredRatio*100.0) )
     {
         tor->desiredRatio = desiredRatio;
-
-        tor->needsSeedRatioCheck = TRUE;
 
         tr_torrentSetDirty( tor );
     }
@@ -284,6 +281,56 @@ tr_torrentGetSeedRatio( const tr_torrent * tor, double * ratio )
 
     return isLimited;
 }
+
+/* returns true if the seed ratio applies --
+ * it applies if the torrent's a seed AND it has a seed ratio set */
+static tr_bool
+tr_torrentGetSeedRatioBytes( tr_torrent  * tor,
+                             uint64_t    * setmeLeft,
+                             uint64_t    * setmeGoal )
+{
+    double seedRatio;
+    tr_bool seedRatioApplies = FALSE;
+
+    if( tr_torrentGetSeedRatio( tor, &seedRatio ) )
+    {
+        const uint64_t u = tor->uploadedCur + tor->uploadedPrev;
+        const uint64_t d = tor->downloadedCur + tor->downloadedPrev;
+        const uint64_t baseline = d ? d : tr_cpSizeWhenDone( &tor->completion );
+        const uint64_t goal = baseline * seedRatio;
+        if( setmeLeft ) *setmeLeft = goal > u ? goal - u : 0;
+        if( setmeGoal ) *setmeGoal = goal;
+        seedRatioApplies = tr_torrentIsSeed( tor );
+    }
+
+    return seedRatioApplies;
+}
+
+static tr_bool
+tr_torrentIsSeedRatioDone( tr_torrent * tor )
+{
+    uint64_t bytesLeft;
+    return tr_torrentGetSeedRatioBytes( tor, &bytesLeft, NULL ) && !bytesLeft;
+}
+
+void
+tr_torrentCheckSeedRatio( tr_torrent * tor )
+{
+    assert( tr_isTorrent( tor ) );
+
+    /* if we're seeding and reach our seed ratio limit, stop the torrent */
+    if( tor->isRunning && tr_torrentIsSeedRatioDone( tor ) )
+    {
+        tr_torinf( tor, "Seed ratio reached; pausing torrent" );
+
+        tr_torrentStop( tor );
+
+        /* maybe notify the client */
+        if( tor->ratio_limit_hit_func != NULL )
+            tor->ratio_limit_hit_func( tor, tor->ratio_limit_hit_func_user_data );
+    }
+}
+
 
 /***
 ****
@@ -696,7 +743,9 @@ torrentInit( tr_torrent * tor, const tr_ctor * ctor )
         if( !tr_ctorGetMetainfo( ctor, &val ) )
         {
             const char * path = tor->info.torrent;
-            tr_bencToFile( val, TR_FMT_BENC, path );
+            const int err = tr_bencToFile( val, TR_FMT_BENC, path );
+            if( err )
+                tr_torrentSetLocalError( tor, "Unable to save torrent file: %s", tr_strerror( err ) );
             tr_sessionSetTorrentFile( tor->session, tor->info.hashString, path );
         }
     }
@@ -834,7 +883,8 @@ tr_torrentChangeMyPort( tr_torrent * tor )
 {
     assert( tr_isTorrent( tor  ) );
 
-    tr_announcerChangeMyPort( tor );
+    if( tor->isRunning )
+        tr_announcerChangeMyPort( tor );
 }
 
 static inline void
@@ -915,9 +965,10 @@ tr_torrentStat( tr_torrent * tor )
     tr_stat *               s;
     int                     usableSeeds;
     uint64_t                now;
-    double                  downloadedForRatio, seedRatio=0;
     double                  d;
-    tr_bool                 checkSeedRatio;
+    uint64_t                seedRatioBytesLeft;
+    uint64_t                seedRatioBytesGoal;
+    tr_bool                 seedRatioApplies;
 
     if( !tor )
         return NULL;
@@ -997,10 +1048,11 @@ tr_torrentStat( tr_torrent * tor )
         tr_bitfieldFree( peerPieces );
     }
 
-    downloadedForRatio = s->downloadedEver ? s->downloadedEver : s->haveValid;
-    s->ratio = tr_getRatio( s->uploadedEver, downloadedForRatio );
+    s->ratio = tr_getRatio( s->uploadedEver,
+                            s->downloadedEver ? s->downloadedEver : s->haveValid );
 
-    checkSeedRatio = tr_torrentGetSeedRatio( tor, &seedRatio );
+    seedRatioApplies = tr_torrentGetSeedRatioBytes( tor, &seedRatioBytesLeft,
+                                                         &seedRatioBytesGoal );
 
     switch( s->activity )
     {
@@ -1025,36 +1077,37 @@ tr_torrentStat( tr_torrent * tor )
                 s->eta = s->leftUntilDone / tor->etaDLSpeed / 1024.0;
             break;
 
-        case TR_STATUS_SEED:
-            if( checkSeedRatio )
-            {
+        case TR_STATUS_SEED: {
+            if( !seedRatioApplies )
+                s->eta = TR_ETA_NOT_AVAIL;
+            else {
                 if( ( tor->etaULSpeedCalculatedAt + 800 ) < now ) {
                     tor->etaULSpeed = ( ( tor->etaULSpeedCalculatedAt + 4000 ) < now )
                         ? s->pieceUploadSpeed /* if no recent previous speed, no need to smooth */
                         : 0.8*tor->etaULSpeed + 0.2*s->pieceUploadSpeed; /* smooth across 5 readings */
                     tor->etaULSpeedCalculatedAt = now;
                 }
-
                 if( s->pieceUploadSpeed < 0.1 )
                     s->eta = TR_ETA_UNKNOWN;
                 else
-                    s->eta = (downloadedForRatio * (seedRatio - s->ratio)) / tor->etaULSpeed / 1024.0;
+                    s->eta = seedRatioBytesLeft / tor->etaULSpeed / 1024.0;
             }
-            else
-                s->eta = TR_ETA_NOT_AVAIL;
             break;
+        }
 
         default:
             s->eta = TR_ETA_NOT_AVAIL;
             break;
     }
 
-    if( !checkSeedRatio || s->ratio >= seedRatio || s->ratio == TR_RATIO_INF )
-        s->percentRatio = 1.0;
-    else if( s->ratio == TR_RATIO_NA )
-        s->percentRatio = 0.0;
+    s->finished = seedRatioApplies && !seedRatioBytesLeft;
+
+    if( !seedRatioApplies || s->finished )
+        s->seedRatioPercentDone = 1;
+    else if( !seedRatioBytesGoal ) /* impossible? safeguard for div by zero */
+        s->seedRatioPercentDone = 0;
     else
-        s->percentRatio = s->ratio / seedRatio;
+        s->seedRatioPercentDone = (double)(seedRatioBytesGoal - seedRatioBytesLeft) / seedRatioBytesGoal;
 
     tr_torrentUnlock( tor );
 
@@ -1338,7 +1391,6 @@ checkAndStartImpl( void * vtor )
     {
         const time_t now = tr_time( );
         tor->isRunning = TRUE;
-        tor->needsSeedRatioCheck = TRUE;
         tor->error = TR_STAT_OK;
         tor->errorString[0] = '\0';
         tor->completeness = tr_cpGetStatus( &tor->completion );
@@ -1372,6 +1424,13 @@ torrentStart( tr_torrent * tor )
 
     if( !tor->isRunning )
     {
+        /* allow finished torrents to be resumed */
+        if( tr_torrentIsSeedRatioDone( tor ) )
+        {
+            tr_torinf( tor, "Restarted manually -- disabling its seed ratio" );
+            tr_torrentSetRatioMode( tor, TR_RATIOLIMIT_UNLIMITED );
+        }
+
         tr_verifyRemove( tor );
 
         /* corresponds to the peer_id sent as a tracker request parameter.
@@ -1475,6 +1534,7 @@ static void
 stopTorrent( void * vtor )
 {
     tr_torrent * tor = vtor;
+    tr_torinf( tor, "Pausing" );
 
     assert( tr_isTorrent( tor ) );
 
@@ -1649,7 +1709,6 @@ tr_torrentRecheckCompleteness( tr_torrent * tor )
         }
 
         tor->completeness = completeness;
-        tor->needsSeedRatioCheck = TRUE;
         tr_fdTorrentClose( tor->session, tor->uniqueId );
 
         /* if the torrent is a seed now,
@@ -1832,7 +1891,6 @@ tr_torrentInitFileDLs( tr_torrent      * tor,
             setFileDND( tor, files[i], doDownload );
 
     tr_cpInvalidateDND( &tor->completion );
-    tor->needsSeedRatioCheck = TRUE;
 
     tr_torrentUnlock( tor );
 }
@@ -2344,8 +2402,8 @@ deleteLocalData( tr_torrent * tor, tr_fileFunc fileFunc )
             deleteLocalFile( s[i], fileFunc );
 
     /* now blow away any remaining torrent files, such as torrent files in dirty folders */
-    for( f=0; f<tor->info.fileCount; ++f ) {
-        char * path = tr_buildPath( tor->currentDir, tor->info.files[f].name, NULL );
+    for( i=0, n=tr_ptrArraySize( &torrentFiles ); i<n; ++i ) {
+        char * path = tr_buildPath( tor->currentDir, tr_ptrArrayNth( &torrentFiles, i ), NULL );
         deleteLocalFile( path, fileFunc );
         tr_free( path );
     }
@@ -2424,6 +2482,31 @@ struct LocationData
     tr_torrent * tor;
 };
 
+static tr_bool
+sameInode( const char * path1, const char * path2 )
+{
+    int i1, i2;
+    struct stat s1, s2;
+
+    s1.st_ino = 1;
+    i1 = stat( path1, &s1 );
+
+    s2.st_ino = 2;
+    i2 = stat( path2, &s2 );
+
+    if( !i1 && !i2 ) {
+        tr_dbg( "path1 inode is %"PRIu64"; path2 inode is %"PRIu64,
+                (uint64_t)s1.st_ino,
+                (uint64_t)s2.st_ino );
+        return s1.st_ino == s2.st_ino;
+    }
+
+    /* either one, or the other, or both don't exist... */
+    tr_dbg( "stat(%s) returned %d\n", path1, i1 );
+    tr_dbg( "stat(%s) returned %d\n", path2, i2 );
+    return FALSE;
+}
+
 static void
 setLocation( void * vdata )
 {
@@ -2437,7 +2520,12 @@ setLocation( void * vdata )
 
     assert( tr_isTorrent( tor ) );
 
-    if( strcmp( location, tor->currentDir ) )
+    tr_dbg( "Moving \"%s\" location from currentDir \"%s\" to \"%s\"",
+            tr_torrentName(tor), tor->currentDir, location );
+
+    tr_mkdirp( location, 0777 );
+
+    if( !sameInode( location, tor->currentDir ) )
     {
         tr_file_index_t i;
 
@@ -2464,6 +2552,8 @@ setLocation( void * vdata )
             {
                 char * oldpath = tr_buildPath( oldbase, sub, NULL );
                 char * newpath = tr_buildPath( location, sub, NULL );
+
+                tr_dbg( "Found file #%d: %s", (int)i, oldpath );
 
                 if( do_move )
                 {
@@ -2511,6 +2601,13 @@ setLocation( void * vdata )
         }
     }
 
+    if( !err && do_move )
+    {
+        tr_free( tor->incompleteDir );
+        tor->incompleteDir = NULL;
+        tor->currentDir = tor->downloadDir;
+    }
+
     if( data->setme_state )
         *data->setme_state = err ? TR_LOC_ERROR : TR_LOC_DONE;
 
@@ -2543,44 +2640,6 @@ tr_torrentSetLocation( tr_torrent  * tor,
     data->setme_state = setme_state;
     data->setme_progress = setme_progress;
     tr_runInEventThread( tor->session, setLocation, data );
-}
-
-/***
-****
-***/
-
-void
-tr_torrentCheckSeedRatio( tr_torrent * tor )
-{
-    double seedRatio;
-
-    assert( tr_isTorrent( tor ) );
-
-    /* if we're seeding and we've reached our seed ratio limit, stop the torrent */
-    if( tor->isRunning && tr_torrentIsSeed( tor ) && tr_torrentGetSeedRatio( tor, &seedRatio ) )
-    {
-        const uint64_t up = tor->uploadedCur + tor->uploadedPrev;
-        uint64_t down = tor->downloadedCur + tor->downloadedPrev;
-        double ratio;
-
-        /* maybe we're the initial seeder and never downloaded anything... */
-        if( down == 0 )
-            down = tr_cpHaveValid( &tor->completion );
-
-        ratio = tr_getRatio( up, down );
-
-        if( ratio >= seedRatio || ratio == TR_RATIO_INF )
-        {
-            tr_torrentStop( tor );
-
-            /* set to no ratio limit to allow easy restarting */
-            tr_torrentSetRatioMode( tor, TR_RATIOLIMIT_UNLIMITED );
-
-            /* maybe notify the client */
-            if( tor->ratio_limit_hit_func != NULL )
-                tor->ratio_limit_hit_func( tor, tor->ratio_limit_hit_func_user_data );
-        }
-    }
 }
 
 /***

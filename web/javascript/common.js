@@ -234,8 +234,19 @@ Math.formatTimestamp = function(seconds) {
 	if(hours == 0){
 		hours = 12;
 	}
+	if(hours < 10){
+		hours = "0" + hours; 
+	} 
+	var minutes = myDate.getMinutes(); 
+	if(minutes < 10){ 
+		minutes = "0" + minutes; 
+	} 
+	var seconds = myDate.getSeconds(); 
+		if(seconds < 10){ 
+			seconds = "0" + seconds; 
+	} 
 
-	time = [hours, myDate.getMinutes(), myDate.getSeconds()].join(':');
+	time = [hours, minutes, seconds].join(':');
 
 	return [date, time, period].join(' ');
 };
@@ -319,8 +330,6 @@ function changeTab(tab, id) {
 function Prefs() { }
 Prefs.prototype = { };
 
-Prefs._AutoStart          = 'auto-start-torrents';
-
 Prefs._RefreshRate        = 'refresh_rate';
 Prefs._SessionRefreshRate        = 'session_refresh_rate';
 
@@ -351,7 +360,6 @@ Prefs._TurtleState        = 'turtle-state';
 
 Prefs._Defaults =
 {
-	'auto-start-torrents': true,
 	'filter': 'all',
 	'refresh_rate' : 5,
 	'show_filter': true,

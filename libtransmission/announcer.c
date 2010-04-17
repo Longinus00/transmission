@@ -377,6 +377,7 @@ typedef struct
     time_t lastScrapeStartTime;
     time_t lastScrapeTime;
     tr_bool lastScrapeSucceeded;
+    tr_bool lastScrapeTimedOut;
 
     time_t announceAt;
     time_t manualAnnounceAllowedAt;
@@ -886,7 +887,7 @@ tr_announcerResetTorrent( tr_announcer * announcer, tr_torrent * tor )
         tr_tier ** tiers = (tr_tier**) tr_ptrArrayPeek( &tor->tiers->tiers, &n );
         for( i=0; i<n; ++i ) {
             tr_tier * tier = tiers[i];
-            if( !tier->wasCopied )    
+            if( !tier->wasCopied )
                 tierAddAnnounce( tier, STARTED, now );
         }
     }
@@ -1714,6 +1715,7 @@ onScrapeDone( tr_session   * session,
         }
 
         tier->lastScrapeSucceeded = success;
+        tier->lastScrapeTimedOut = responseCode == 0;
 
         if( success && tier->currentTracker->host )
             tier->currentTracker->host->lastSuccessfulRequest = now;
@@ -1959,6 +1961,7 @@ tr_announcerStats( const tr_torrent * torrent,
                 if(( st->hasScraped = tier->lastScrapeTime != 0 )) {
                     st->lastScrapeTime = tier->lastScrapeTime;
                     st->lastScrapeSucceeded = tier->lastScrapeSucceeded;
+                    st->lastScrapeTimedOut = tier->lastScrapeTimedOut;
                     tr_strlcpy( st->lastScrapeResult, tier->lastScrapeStr, sizeof( st->lastScrapeResult ) );
                 }
 

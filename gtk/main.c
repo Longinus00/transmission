@@ -227,7 +227,7 @@ static gboolean       updatemodel( gpointer gdata );
 ****
 ***/
 
-#ifdef HAVE_LIBGCONF
+#ifdef HAVE_GCONF2
  #include <gconf/gconf.h>
  #include <gconf/gconf-client.h>
 #endif
@@ -235,7 +235,7 @@ static gboolean       updatemodel( gpointer gdata );
 static void
 registerMagnetLinkHandler( void )
 {
-#ifdef HAVE_LIBGCONF
+#ifdef HAVE_GCONF2
     GError * err;
     GConfValue * value;
     GConfClient * client = gconf_client_get_default( );
@@ -409,7 +409,7 @@ setupsighandlers( void )
 }
 
 static tr_rpc_callback_status
-onRPCChanged( tr_session            * session UNUSED,
+onRPCChanged( tr_session            * session,
               tr_rpc_callback_type    type,
               struct tr_torrent     * tor,
               void                  * gdata )
@@ -428,6 +428,9 @@ onRPCChanged( tr_session            * session UNUSED,
             break;
 
         case TR_RPC_SESSION_CHANGED:
+            tr_sessionGetSettings( session, pref_get_all( ) );
+            break;
+
         case TR_RPC_TORRENT_CHANGED:
         case TR_RPC_TORRENT_MOVED:
         case TR_RPC_TORRENT_STARTED:
@@ -1296,6 +1299,14 @@ prefschanged( TrCore * core UNUSED,
     else if( !strcmp( key, TR_PREFS_KEY_INCOMPLETE_DIR_ENABLED ) )
     {
         tr_sessionSetIncompleteDirEnabled( tr, pref_flag_get( key ) );
+    }
+    else if( !strcmp( key, TR_PREFS_KEY_START) )
+    {
+        tr_sessionSetPaused( tr, !pref_flag_get( key ) );
+    }
+    else if( !strcmp( key, TR_PREFS_KEY_TRASH_ORIGINAL ) )
+    {
+        tr_sessionSetDeleteSource( tr, pref_flag_get( key ) );
     }
 }
 
