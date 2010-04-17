@@ -491,8 +491,8 @@ addField( const tr_torrent * tor, tr_benc * d, const char * key )
         tr_bencDictAddStr( d, key, st->errorString );
     else if( tr_streq( key, keylen, "eta" ) )
         tr_bencDictAddInt( d, key, st->eta );
-    else if( tr_streq( key, keylen, "failedTimeCheck" ) )
-        tr_bencDictAddBool( d, key, st->failedTimeCheck );
+    else if( tr_streq( key, keylen, "failedState" ) )
+        tr_bencDictAddInt( d, key, st->failedState );
     else if( tr_streq( key, keylen, "files" ) )
         addFiles( tor, tr_bencDictAddList( d, key, inf->fileCount ) );
     else if( tr_streq( key, keylen, "fileStats" ) )

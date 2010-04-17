@@ -1028,7 +1028,7 @@ tr_torrentStat( tr_torrent * tor )
     s->uploadedEver    = tor->uploadedCur   + tor->uploadedPrev;
     s->haveValid       = tr_cpHaveValid( &tor->completion );
     s->haveUnchecked   = tr_cpHaveTotal( &tor->completion ) - s->haveValid;
-    s->failedTimeCheck = tor->failedState > TR_FAILED_NONE ? TRUE : FALSE;
+    s->failedState     = tor->failedState;
 
     if( usableSeeds > 0 )
     {

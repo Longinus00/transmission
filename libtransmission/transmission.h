@@ -1654,6 +1654,16 @@ tr_torrent_activity;
 
 tr_torrent_activity tr_torrentGetActivity( tr_torrent * );
 
+/** The state of a torrent's data */
+typedef enum
+{
+    TR_FAILED_NONE       = 0, /* Everything's okay */
+    TR_UNCHECKED_PIECES  = 1, /* Torrent has unchecked pieces */
+    TR_FAILED_HASH       = 2, /* Failed piece hash check */
+    TR_FAILED_FILE       = 3  /* Missing all files */
+}
+tr_failed_state;
+
 enum
 {
     TR_PEER_FROM_INCOMING  = 0,  /* connections made to the listening port */
@@ -1826,8 +1836,8 @@ typedef struct tr_stat
     /** The last time we uploaded or downloaded piece data on this torrent. */
     time_t    activityDate;
 
-    /** Has the torrent has been modified since it was last seen by transmission */
-    tr_bool   failedTimeCheck;
+    /** The state of the torrent's data */
+    tr_failed_state failedState;
     
     /** A torrent is considered finished if it has met its seed ratio.
         As a result, only paused torrents can be finished. */
