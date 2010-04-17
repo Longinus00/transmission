@@ -392,8 +392,8 @@ Torrent.prototype =
 		this._state                   = data.status;
 		this._download_dir            = data.downloadDir;
 		this._metadataPercentComplete = data.metadataPercentComplete;
-		this._desiredAvailable        = data.desiredAvailable;
 		this._isFinishedSeeding       = data.isFinished;
+		this._desiredAvailable        = data.desiredAvailable;
 
 		if (data.fileStats)
 			this.refreshFileModel( data );

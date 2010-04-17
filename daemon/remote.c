@@ -1280,7 +1280,7 @@ printDetails( tr_benc * top )
             {
                 if( i < 1 )
                     printf( "  Availability: None\n" );
-                if( tr_bencDictFindInt( t, "desiredAvailable", &j) 
+                if( tr_bencDictFindInt( t, "desiredAvailable", &j)
                     && tr_bencDictFindInt( t, "leftUntilDone", &k) )
                 {
                     j += i - k;
