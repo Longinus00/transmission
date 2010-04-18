@@ -1658,7 +1658,7 @@ tr_torrent_activity tr_torrentGetActivity( tr_torrent * );
 typedef enum
 {
     TR_FAILED_NONE       = 0, /* Everything's okay */
-    TR_UNCHECKED_PIECES  = 1, /* Torrent has unchecked pieces */
+    TR_FAILED_TIME       = 1, /* Torrent failed loadProgress check (mtime, bitfield error) */
     TR_FAILED_HASH       = 2, /* Failed piece hash check */
     TR_FAILED_FILE       = 3  /* Missing all files */
 }

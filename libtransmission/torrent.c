@@ -1507,7 +1507,7 @@ verifyTorrent( void * vtor )
     /* add the torrent to the recheck queue */
     tr_torrentUncheck( tor );
     /* short circut the delayed verification logic */
-    if( tor->failedState == TR_UNCHECKED_PIECES )
+    if( tor->failedState == TR_FAILED_TIME )
         tor->failedState = TR_FAILED_HASH;
     tr_verifyAdd( tor, torrentRecheckDoneCB );
 

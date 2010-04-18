@@ -286,8 +286,6 @@ tr_verifyAdd( tr_torrent *      tor,
         const tr_bool hadAny = tr_cpHaveTotal( &tor->completion ) != 0;
 
         if( hadAny ){
-            /* There used to be data and it is now gone */
-
             if( tor->failedState != TR_FAILED_FILE ){
                 /* Complain about missing files  */
                 tr_torerr( tor, "Can't find local data" );
@@ -336,7 +334,7 @@ tr_verifyAdd( tr_torrent *      tor,
         fireCheckDone( tor, verify_done_cb );
     }
     else if( tr_torrentCountUncheckedPieces( tor ) == 0
-        || ( tor->failedState == TR_UNCHECKED_PIECES ) )
+        || ( tor->failedState == TR_FAILED_TIME ) )
     {
         /* Torrent doesn't need to be checked, yet... */
         fireCheckDone( tor, verify_done_cb );

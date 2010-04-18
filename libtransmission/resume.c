@@ -523,7 +523,7 @@ loadProgress( tr_benc *    dict,
 
     if( tr_torrentCountUncheckedPieces( tor ) != 0 )
     {
-        tor->failedState = TR_UNCHECKED_PIECES;
+        tor->failedState = TR_FAILED_TIME;
         tr_tordbg( tor, "Torrent has %d unchecked pieces", tr_torrentCountUncheckedPieces( tor ) );
     }
 
