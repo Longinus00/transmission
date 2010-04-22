@@ -403,7 +403,7 @@ saveProgress( tr_benc *          dict,
                        bitfield->bits, bitfield->byteCount );
 
     /* add the checked pieces */
-    if( tor->failedState == 0 )
+    if( tor->failedState == TR_FAILED_NONE )
         tr_bencDictAddStr( p, KEY_PROGRESS_CHECKED, "all" );
     bitfield = &tor->checkedPieces;
     tr_bencDictAddRaw( p, KEY_PROGRESS_CBITFIELD,
