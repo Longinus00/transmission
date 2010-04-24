@@ -356,6 +356,19 @@ event_write_cb( int fd, short event UNUSED, void * vio )
 ***
 **/
 
+static void
+maybeSetCongestionAlgorithm( int socket, const char * algorithm )
+{
+    if( algorithm && *algorithm )
+    {
+        const int rc = tr_netSetCongestionControl( socket, algorithm );
+
+        if( rc < 0 )
+            tr_ninf( "Net", "Can't set congestion control algorithm '%s': %s",
+                     algorithm, tr_strerror( errno ));
+    }
+}
+
 static tr_peerIo*
 tr_peerIoNew( tr_session       * session,
               tr_bandwidth     * parent,
@@ -374,9 +387,11 @@ tr_peerIoNew( tr_session       * session,
     assert( tr_isBool( isSeed ) );
     assert( tr_amInEventThread( session ) );
 
-    if( socket >= 0 )
+    if( socket >= 0 ) {
         tr_netSetTOS( socket, session->peerSocketTOS );
-
+        maybeSetCongestionAlgorithm( socket, session->peer_congestion_algorithm );
+    }
+    
     io = tr_new0( tr_peerIo, 1 );
     io->magicNumber = MAGIC_NUMBER;
     io->refCount = 1;
@@ -646,6 +661,7 @@ tr_peerIoReconnect( tr_peerIo * io )
     if( io->socket >= 0 )
     {
         tr_netSetTOS( io->socket, session->peerSocketTOS );
+        maybeSetCongestionAlgorithm( io->socket, session->peer_congestion_algorithm );
         return 0;
     }
 
