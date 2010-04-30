@@ -627,6 +627,7 @@ tr_sessionInitImpl( void * vdata )
 }
 
 static void turtleBootstrap( tr_session *, struct tr_turtle_info * );
+static void setPeerPort( tr_session * session, tr_port port );
 
 static void
 sessionSetImpl( void * vdata )
@@ -718,7 +719,6 @@ sessionSetImpl( void * vdata )
         b.addr = tr_inaddr_any;
     b.socket = -1;
     session->public_ipv4 = tr_memdup( &b, sizeof( struct tr_bindinfo ) );
-    tr_webSetInterface( session, &session->public_ipv4->addr );
 
     str = TR_PREFS_KEY_BIND_ADDRESS_IPV6;
     tr_bencDictFindStr( settings, TR_PREFS_KEY_BIND_ADDRESS_IPV6, &str );
@@ -736,7 +736,7 @@ sessionSetImpl( void * vdata )
         tr_sessionSetPeerPortRandomOnStart( session, boolVal );
     if( !tr_bencDictFindInt( settings, TR_PREFS_KEY_PEER_PORT, &i ) )
         i = session->peerPort;
-    tr_sessionSetPeerPort( session, boolVal ? getRandomPort( session ) : i );
+    setPeerPort( session, boolVal ? getRandomPort( session ) : i );
     if( tr_bencDictFindBool( settings, TR_PREFS_KEY_PORT_FORWARDING, &boolVal ) )
         tr_sessionSetPortForwardingEnabled( session, boolVal );
 
@@ -947,7 +947,7 @@ tr_sessionIsLocked( const tr_session * session )
  **********************************************************************/
 
 static void
-setPeerPort( void * session )
+peerPortChanged( void * session )
 {
     tr_torrent * tor = NULL;
 
@@ -961,6 +961,14 @@ setPeerPort( void * session )
         tr_torrentChangeMyPort( tor );
 }
 
+static void
+setPeerPort( tr_session * session, tr_port port )
+{
+    session->peerPort = port;
+
+    tr_runInEventThread( session, peerPortChanged, session );
+}
+
 void
 tr_sessionSetPeerPort( tr_session * session, tr_port port )
 {
@@ -968,9 +976,7 @@ tr_sessionSetPeerPort( tr_session * session, tr_port port )
 
     if( session->peerPort != port )
     {
-        session->peerPort = port;
-
-        tr_runInEventThread( session, setPeerPort, session );
+        setPeerPort( session, port );
     }
 }
 
@@ -2384,19 +2390,4 @@ tr_sessionSetProxyPassword( tr_session * session,
         tr_free( session->proxyPassword );
         session->proxyPassword = tr_strdup( password );
     }
-}
-
-int
-tr_sessionGetActiveTorrentCount( tr_session * session )
-{
-    int ret = 0;
-    tr_torrent * tor = NULL;
-
-    assert( tr_isSession( session ) );
-
-    while(( tor = tr_torrentNext( session, tor )))
-        if( tr_torrentGetActivity( tor ) != TR_STATUS_STOPPED )
-            ++ret;
-
-    return ret;
 }
