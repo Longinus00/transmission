@@ -940,7 +940,7 @@ tr_torrentSetVerifyState( tr_torrent * tor, tr_verify_state state )
     tor->anyDate = tr_time( );
 }
 
-tr_torrent_activity
+static tr_torrent_activity
 tr_torrentGetActivity( tr_torrent * tor )
 {
     assert( tr_isTorrent( tor ) );
@@ -1713,11 +1713,13 @@ tr_torrentRecheckCompleteness( tr_torrent * tor )
         tor->completeness = completeness;
         tr_fdTorrentClose( tor->session, tor->uniqueId );
 
-        /* if the torrent is a seed now,
-         * and the files used to be in the incompleteDir,
-         * then move them to the destination directory */
-        if( tr_torrentIsSeed( tor ) && ( tor->currentDir == tor->incompleteDir ) )
-            tr_torrentSetLocation( tor, tor->downloadDir, TRUE, NULL, NULL );
+        if( tr_torrentIsSeed( tor ) )
+        {
+            tr_torrentCheckSeedRatio( tor );
+
+            if( tor->currentDir == tor->incompleteDir )
+                tr_torrentSetLocation( tor, tor->downloadDir, TRUE, NULL, NULL );
+        }
 
         fireCompletenessChange( tor, completeness );
 
@@ -2657,9 +2659,9 @@ tr_torrentFileCompleted( tr_torrent * tor, tr_file_index_t fileNum )
     /* close the file so that we can reopen in read-only mode as needed */
     tr_fdFileClose( tor->session, tor, fileNum );
 
-    /* if the torrent's filename on disk isn't the same as the one in the metadata,
-     * then it's been modified to denote that it was a partial file.
-     * Now that it's complete, use the proper filename. */
+    /* if the torrent's current filename isn't the same as the one in the
+     * metadata -- for example, if it had the ".part" suffix appended to
+     * it until now -- then rename it to match the one in the metadata */
     if( tr_torrentFindFile2( tor, fileNum, &base, &sub ) )
     {
         const tr_file * file = &tor->info.files[fileNum];
