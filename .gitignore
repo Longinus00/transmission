@@ -40,6 +40,7 @@ gtk/transmission
 
 qt/moc_about.cpp
 qt/moc_app.cpp
+qt/moc_dbus-adaptor.cpp
 qt/moc_details.cpp
 qt/moc_file-tree.cpp
 qt/moc_hig.cpp
