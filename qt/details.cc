@@ -836,8 +836,7 @@ Details :: refresh( )
 
     if( single )
     {
-        if( myChangedTorrents )
-            myFileTreeView->update( torrents[0]->files( ) );
+        myFileTreeView->update( torrents[0]->files( ) , myChangedTorrents );
     }
     else
         myFileTreeView->clear( );
