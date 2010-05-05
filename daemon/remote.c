@@ -1341,6 +1341,10 @@ printSession( tr_benc * top )
             printf( "  Listenport: %" PRId64 "\n", i );
         if( tr_bencDictFindBool( args, TR_PREFS_KEY_PORT_FORWARDING, &boolVal ) )
             printf( "  Portforwarding enabled: %s\n", ( boolVal ? "Yes" : "No" ) );
+        if( tr_bencDictFindBool( args, TR_PREFS_KEY_DHT_ENABLED, &boolVal ) )
+            printf( "  Distributed hash table enabled: %s\n", ( boolVal ? "Yes" : "No" ) );
+        if( tr_bencDictFindBool( args, TR_PREFS_KEY_LDS_ENABLED, &boolVal ) )
+            printf( "  Local peer discovery enabled: %s\n", ( boolVal ? "Yes" : "No" ) );
         if( tr_bencDictFindBool( args, TR_PREFS_KEY_PEX_ENABLED, &boolVal ) )
             printf( "  Peer exchange allowed: %s\n", ( boolVal ? "Yes" : "No" ) );
         if( tr_bencDictFindStr( args,  TR_PREFS_KEY_ENCRYPTION, &str ) )
@@ -1863,7 +1867,7 @@ processArgs( const char * host, int port, int argc, const char ** argv )
                 case 'D': if( targs )
                               tr_bencDictAddBool( targs, "downloadLimited", FALSE );
                           else
-                              tr_bencDictAddBool( sargs, TR_PREFS_KEY_DSPEED_ENABLED, TRUE );
+                              tr_bencDictAddBool( sargs, TR_PREFS_KEY_DSPEED_ENABLED, FALSE );
                           break;
                 case 'u': if( targs ) {
                               tr_bencDictAddInt( targs, "uploadLimit", numarg( optarg ) );
@@ -1876,7 +1880,7 @@ processArgs( const char * host, int port, int argc, const char ** argv )
                 case 'U': if( targs )
                               tr_bencDictAddBool( targs, "uploadLimited", FALSE );
                           else
-                              tr_bencDictAddBool( sargs, TR_PREFS_KEY_USPEED_ENABLED, TRUE );
+                              tr_bencDictAddBool( sargs, TR_PREFS_KEY_USPEED_ENABLED, FALSE );
                           break;
                 case 930: if( targs )
                               tr_bencDictAddInt( targs, "peer-limit", atoi(optarg) );
