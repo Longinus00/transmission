@@ -101,6 +101,12 @@ to stop using the alt speed limits (in hhmm).
 Set the number of
 .Ar days
 on which to enable the speed scheduler, using a list such as "2,4-6".
+.It Fl -torrent-done-script Ar filename
+Specify a
+.Ar file
+to run each time a torrent finishes
+.It Fl -no-torrent-done-script
+Don't run any script when a torrent finishes
 .It Fl c Fl -incomplete-dir Ar dir
 When adding new torrents, store their contents in
 .Ar directory
@@ -248,9 +254,9 @@ Enable peer exchange (PEX).
 .It Fl X Fl -no-pex
 Disable peer exchange (PEX).
 .It Fl z Fl -lds
-Enable local peer discovery (LDS).
+Enable local peer discovery (LPD).
 .It Fl Z Fl -no-lds
-Disable local peer discovery (LDS).
+Disable local peer discovery (LPD).
 .It Fl pi Fl -peer-info
 List the current torrent's connected peers.
 In the `status' section of the list, the following shorthand is used:
