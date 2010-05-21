@@ -271,7 +271,7 @@ tr_ioReadCheckPiece( tr_torrent       * tor,
     int ret = readOrWritePiece( tor, TR_IO_READ, pieceIndex, begin, buf, len );
     /* Only check piece hash if the torrent has unchecked pieces. If a piece
      * was previously checked then we shouldn't check it twice. */
-    if( tor->failedState > TR_FAILED_NONE
+    if( tor->failedState != TR_FAILED_NONE
         && !tr_torrentIsPieceChecked( tor, pieceIndex )
         && !ret )
     {
