@@ -110,9 +110,7 @@
 #warning subclass?
 - (void) setInfoForTorrents: (NSArray *) torrents
 {
-    if (fTorrents && [fTorrents isEqualToArray: torrents])
-        return;
-    
+    //don't check if it's the same in case the metadata changed
     [fTorrents release];
     fTorrents = [torrents retain];
     
@@ -137,7 +135,7 @@
     else
         [fWebSeeds removeAllObjects];
     
-    NSUInteger known = 0, connected = 0, tracker = 0, incoming = 0, cache = 0, pex = 0, dht = 0, ltep = 0,
+    NSUInteger known = 0, connected = 0, tracker = 0, incoming = 0, cache = 0, lds = 0, pex = 0, dht = 0, ltep = 0,
                 toUs = 0, fromUs = 0;
     BOOL anyActive = false;
     for (Torrent * torrent in fTorrents)
@@ -159,6 +157,7 @@
                 tracker += [torrent totalPeersTracker];
                 incoming += [torrent totalPeersIncoming];
                 cache += [torrent totalPeersCache];
+                lds += [torrent totalPeersLocal];
                 pex += [torrent totalPeersPex];
                 dht += [torrent totalPeersDHT];
                 ltep += [torrent totalPeersLTEP];
@@ -193,6 +192,9 @@
             if (cache > 0)
                 [fromComponents addObject: [NSString stringWithFormat:
                                         NSLocalizedString(@"%d cache", "Inspector -> Peers tab -> peers"), cache]];
+            if (lds > 0)
+                [fromComponents addObject: [NSString stringWithFormat:
+                                        NSLocalizedString(@"%d local discovery", "Inspector -> Peers tab -> peers"), lds]];
             if (pex > 0)
                 [fromComponents addObject: [NSString stringWithFormat:
                                         NSLocalizedString(@"%d PEX", "Inspector -> Peers tab -> peers"), pex]];
@@ -383,6 +385,9 @@
                 break;
             case TR_PEER_FROM_RESUME:
                 [components addObject: NSLocalizedString(@"From: cache", "Inspector -> Peers tab -> table row tooltip")];
+                break;
+            case TR_PEER_FROM_LPD:
+                [components addObject: NSLocalizedString(@"From: local peer discovery", "Inspector -> Peers tab -> table row tooltip")];
                 break;
             case TR_PEER_FROM_PEX:
                 [components addObject: NSLocalizedString(@"From: peer exchange", "Inspector -> Peers tab -> table row tooltip")];

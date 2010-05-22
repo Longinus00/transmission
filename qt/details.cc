@@ -123,6 +123,7 @@ Details :: Details( Session& session, Prefs& prefs, TorrentModel& model, QWidget
     mySession( session ),
     myPrefs( prefs ),
     myModel( model ),
+    myChangedTorrents( false ),
     myHavePendingRefresh( false )
 {
     QVBoxLayout * layout = new QVBoxLayout( this );
@@ -144,8 +145,9 @@ Details :: Details( Session& session, Prefs& prefs, TorrentModel& model, QWidget
     layout->addWidget( t );
 
     QDialogButtonBox * buttons = new QDialogButtonBox( QDialogButtonBox::Close, Qt::Horizontal, this );
-    connect( buttons, SIGNAL(rejected()), this, SLOT(deleteLater()));
+    connect( buttons, SIGNAL(rejected()), this, SLOT(close()));
     layout->addWidget( buttons );
+    QWidget::setAttribute( Qt::WA_DeleteOnClose, true );
 
     connect( &myTimer, SIGNAL(timeout()), this, SLOT(onTimer()));
 
@@ -163,6 +165,8 @@ Details :: setIds( const QSet<int>& ids )
 {
     if( ids == myIds )
         return;
+
+    myChangedTorrents = true;
 
     // stop listening to the old torrents
     foreach( int id, myIds ) {
@@ -534,7 +538,7 @@ Details :: refresh( )
     ///  Options Tab
     ///
 
-    if( !torrents.empty( ) )
+    if( myChangedTorrents && !torrents.empty( ) )
     {
         int i;
         const Torrent * baseline = *torrents.begin();
@@ -832,10 +836,11 @@ Details :: refresh( )
     myPeers = peers2;
 
     if( single )
-        myFileTreeView->update( torrents[0]->files( ) );
+        myFileTreeView->update( torrents[0]->files( ) , myChangedTorrents );
     else
         myFileTreeView->clear( );
 
+    myChangedTorrents = false;
     myHavePendingRefresh = false;
     foreach( QWidget * w, myWidgets )
         w->setEnabled( true );
@@ -989,7 +994,7 @@ Details :: createOptionsTab( )
     hig->addWideControl( c );
     connect( c, SIGNAL(clicked(bool)), this, SLOT(onHonorsSessionLimitsToggled(bool)) );
 
-    c = new QCheckBox( tr( "Limit &download speed (KB/s):" ) );
+    c = new QCheckBox( tr( "Limit &download speed (KiB/s):" ) );
     mySingleDownCheck = c;
     s = new QSpinBox( );
     mySingleDownSpin = s;
@@ -999,7 +1004,7 @@ Details :: createOptionsTab( )
     connect( c, SIGNAL(clicked(bool)), this, SLOT(onDownloadLimitedToggled(bool)) );
     connect( s, SIGNAL(valueChanged(int)), this, SLOT(onDownloadLimitChanged(int)));
 
-    c = new QCheckBox( tr( "Limit &upload speed (KB/s):" ) );
+    c = new QCheckBox( tr( "Limit &upload speed (KiB/s):" ) );
     mySingleUpCheck = c;
     s = new QSpinBox( );
     mySingleUpSpin = s;
@@ -1123,7 +1128,7 @@ Details :: createPeersTab( )
     v->addWidget( myPeerTree, 1 );
 
     const QFontMetrics m( font( ) );
-    QSize size = m.size( 0, "1024 MB/s" );
+    QSize size = m.size( 0, "1024 MiB/s" );
     myPeerTree->setColumnWidth( COL_UP, size.width( ) );
     myPeerTree->setColumnWidth( COL_DOWN, size.width( ) );
     size = m.size( 0, " 100% " );

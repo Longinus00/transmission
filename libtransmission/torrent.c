@@ -43,6 +43,7 @@
 #include "trevent.h" /* tr_runInEventThread() */
 #include "utils.h"
 #include "verify.h"
+#include "version.h"
 
 enum
 {
@@ -354,27 +355,28 @@ onTrackerResponse( void * tracker UNUSED,
                    void * vevent,
                    void * user_data )
 {
-    tr_torrent *       tor = user_data;
+    tr_torrent * tor = user_data;
     tr_tracker_event * event = vevent;
 
     switch( event->messageType )
     {
         case TR_TRACKER_PEERS:
         {
-            size_t   i, n;
+            size_t i, n;
+            const int seedProbability = event->seedProbability;
+            const tr_bool allAreSeeds = seedProbability == 100;
             tr_pex * pex = tr_peerMgrArrayToPex( event->compact,
                                                  event->compactLen, &n );
-             if( event->allAreSeeds )
+             if( allAreSeeds )
                 tr_tordbg( tor, "Got %d seeds from tracker", (int)n );
             else
                 tr_tordbg( tor, "Got %d peers from tracker", (int)n );
 
             for( i = 0; i < n; ++i )
-            {
-                if( event->allAreSeeds )
-                    pex[i].flags |= ADDED_F_SEED_FLAG;
-                tr_peerMgrAddPex( tor, TR_PEER_FROM_TRACKER, pex + i );
-            }
+                tr_peerMgrAddPex( tor, TR_PEER_FROM_TRACKER, pex+i, seedProbability );
+
+            if( allAreSeeds && tr_torrentIsPrivate( tor ) )
+                tr_peerMgrMarkAllAsSeeds( tor );
 
             tr_free( pex );
             break;
@@ -691,10 +693,6 @@ torrentInit( tr_torrent * tor, const tr_ctor * ctor )
     assert( !tor->downloadedCur );
     assert( !tor->uploadedCur );
 
-    tr_ctorInitTorrentPriorities( ctor, tor );
-
-    tr_ctorInitTorrentWanted( ctor, tor );
-
     tr_torrentUncheck( tor );
 
     tr_torrentSetAddedDate( tor, tr_time( ) ); /* this is a default value to be
@@ -703,6 +701,9 @@ torrentInit( tr_torrent * tor, const tr_ctor * ctor )
     torrentInitFromInfo( tor );
     loaded = tr_torrentLoadResume( tor, ~0, ctor );
     tor->completeness = tr_cpGetStatus( &tor->completion );
+
+    tr_ctorInitTorrentPriorities( ctor, tor );
+    tr_ctorInitTorrentWanted( ctor, tor );
 
     refreshCurrentDir( tor );
 
@@ -1102,7 +1103,9 @@ tr_torrentStat( tr_torrent * tor )
             break;
     }
 
-    s->finished = seedRatioApplies && !seedRatioBytesLeft;
+    /* s->haveValid is here to make sure a torrent isn't marked 'finished'
+     * when the user hits "uncheck all" prior to starting the torrent... */
+    s->finished = seedRatioApplies && !seedRatioBytesLeft && s->haveValid;
 
     if( !seedRatioApplies || s->finished )
         s->seedRatioPercentDone = 1;
@@ -1402,6 +1405,7 @@ checkAndStartImpl( void * vtor )
         tr_announcerTorrentStarted( tor );
         tor->dhtAnnounceAt = now + tr_cryptoWeakRandInt( 20 );
         tor->dhtAnnounce6At = now + tr_cryptoWeakRandInt( 20 );
+        tor->lpdAnnounceAt = now;
         tr_peerMgrStartTorrent( tor );
     }
 
@@ -1580,6 +1584,8 @@ closeTorrent( void * vtor )
     tr_bencDictAddInt( d, "id", tor->uniqueId );
     tr_bencDictAddInt( d, "date", tr_time( ) );
 
+    tr_torinf( tor, _( "Removing torrent" ) );
+
     stopTorrent( tor );
 
     if( tor->isDeleting )
@@ -1689,6 +1695,36 @@ tr_torrentClearRatioLimitHitCallback( tr_torrent * torrent )
     tr_torrentSetRatioLimitHitCallback( torrent, NULL, NULL );
 }
 
+
+static void
+torrentCallScript( tr_torrent * tor, const char * script )
+{
+    assert( tr_isTorrent( tor ) );
+
+    if( script && *script )
+    {
+        char buf[128];
+        const time_t now = tr_time( );
+
+#ifdef HAVE_CLEARENV
+        clearenv( );
+#endif
+
+        setenv( "TR_APP_VERSION", SHORT_VERSION_STRING, 1 );
+
+        tr_snprintf( buf, sizeof( buf ), "%d", tr_torrentId( tor ) );
+        setenv( "TR_TORRENT_ID", buf, 1 );
+        setenv( "TR_TORRENT_NAME", tr_torrentName( tor ), 1 );
+        setenv( "TR_TORRENT_DIR", tor->currentDir, 1 );
+        setenv( "TR_TORRENT_HASH", tor->info.hashString, 1 );
+        ctime_r( &now, buf );
+        *strchr( buf,'\n' ) = '\0';
+        setenv( "TR_TIME_LOCALTIME", buf, 1 );
+        tr_torinf( tor, "Calling script \"%s\"", script );
+        system( script );
+    }
+}
+
 void
 tr_torrentRecheckCompleteness( tr_torrent * tor )
 {
@@ -1714,11 +1750,16 @@ tr_torrentRecheckCompleteness( tr_torrent * tor )
         tor->completeness = completeness;
         tr_fdTorrentClose( tor->session, tor->uniqueId );
 
-        /* if the torrent is a seed now,
-         * and the files used to be in the incompleteDir,
-         * then move them to the destination directory */
-        if( tr_torrentIsSeed( tor ) && ( tor->currentDir == tor->incompleteDir ) )
-            tr_torrentSetLocation( tor, tor->downloadDir, TRUE, NULL, NULL );
+        if( tr_torrentIsSeed( tor ) )
+        {
+            tr_torrentCheckSeedRatio( tor );
+
+            if( tor->currentDir == tor->incompleteDir )
+                tr_torrentSetLocation( tor, tor->downloadDir, TRUE, NULL, NULL );
+
+            if( tr_sessionIsTorrentDoneScriptEnabled( tor->session ) )
+                torrentCallScript( tor, tr_sessionGetTorrentDoneScript( tor->session ) );
+        }
 
         fireCompletenessChange( tor, completeness );
 
@@ -1783,10 +1824,10 @@ tr_torrentInitFilePriority( tr_torrent *    tor,
 }
 
 void
-tr_torrentSetFilePriorities( tr_torrent *      tor,
-                             tr_file_index_t * files,
-                             tr_file_index_t   fileCount,
-                             tr_priority_t     priority )
+tr_torrentSetFilePriorities( tr_torrent             * tor,
+                             const tr_file_index_t  * files,
+                             tr_file_index_t          fileCount,
+                             tr_priority_t            priority )
 {
     tr_file_index_t i;
     assert( tr_isTorrent( tor ) );
@@ -1878,10 +1919,10 @@ setFileDND( tr_torrent * tor, tr_file_index_t fileIndex, int doDownload )
 }
 
 void
-tr_torrentInitFileDLs( tr_torrent      * tor,
-                       tr_file_index_t * files,
-                       tr_file_index_t   fileCount,
-                       tr_bool           doDownload )
+tr_torrentInitFileDLs( tr_torrent             * tor,
+                       const tr_file_index_t  * files,
+                       tr_file_index_t          fileCount,
+                       tr_bool                  doDownload )
 {
     tr_file_index_t i;
 
@@ -1899,10 +1940,10 @@ tr_torrentInitFileDLs( tr_torrent      * tor,
 }
 
 void
-tr_torrentSetFileDLs( tr_torrent *      tor,
-                      tr_file_index_t * files,
-                      tr_file_index_t   fileCount,
-                      tr_bool           doDownload )
+tr_torrentSetFileDLs( tr_torrent             * tor,
+                      const tr_file_index_t  * files,
+                      tr_file_index_t          fileCount,
+                      tr_bool                  doDownload )
 {
     assert( tr_isTorrent( tor ) );
     tr_torrentLock( tor );
@@ -2658,9 +2699,9 @@ tr_torrentFileCompleted( tr_torrent * tor, tr_file_index_t fileNum )
     /* close the file so that we can reopen in read-only mode as needed */
     tr_fdFileClose( tor->session, tor, fileNum );
 
-    /* if the torrent's filename on disk isn't the same as the one in the metadata,
-     * then it's been modified to denote that it was a partial file.
-     * Now that it's complete, use the proper filename. */
+    /* if the torrent's current filename isn't the same as the one in the
+     * metadata -- for example, if it had the ".part" suffix appended to
+     * it until now -- then rename it to match the one in the metadata */
     if( tr_torrentFindFile2( tor, fileNum, &base, &sub ) )
     {
         const tr_file * file = &tor->info.files[fileNum];

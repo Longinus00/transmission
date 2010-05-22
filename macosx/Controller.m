@@ -52,6 +52,8 @@
 #import "NSStringAdditions.h"
 #import "ExpandedPathToPathTransformer.h"
 #import "ExpandedPathToIconTransformer.h"
+
+#import "transmission.h"
 #import "bencode.h"
 #import "utils.h"
 
@@ -229,12 +231,11 @@ static void sleepCallback(void * controller, io_service_t y, natural_t messageTy
         NSAlert * alert = [[NSAlert alloc] init];
         [alert addButtonWithTitle: NSLocalizedString(@"I Accept", "Legal alert -> button")];
         [alert addButtonWithTitle: NSLocalizedString(@"Quit", "Legal alert -> button")];
-        [alert setMessageText: NSLocalizedString(@"Hear ye, hear ye!", "Legal alert -> title")];
-        [alert setInformativeText: [NSString stringWithFormat: @"%@\n\n%@",
-            NSLocalizedString(@"Transmission is a file-sharing program. When you run a torrent, its data will"
-            " be made available to others by means of upload."
-            " And of course, any content you choose to share is your sole responsibility.", "Legal alert -> message"),
-            NSLocalizedString(@"You probably knew this already, so we won't tell you again.", "Legal alert -> message")]];
+        [alert setMessageText: NSLocalizedString(@"Welcome to Transmission", "Legal alert -> title")];
+        [alert setInformativeText: NSLocalizedString(@"Transmission is a file-sharing program."
+            " When you run a torrent, its data will be made available to others by means of upload."
+            " You and you alone are fully responsible for exercising proper judgement and abiding by your local laws.",
+            "Legal alert -> message")];
         [alert setAlertStyle: NSInformationalAlertStyle];
         
         if ([alert runModal] == NSAlertSecondButtonReturn)
@@ -288,6 +289,12 @@ static void sleepCallback(void * controller, io_service_t y, natural_t messageTy
         tr_bencDictAddBool(&settings, TR_PREFS_KEY_DSPEED_ENABLED, [fDefaults boolForKey: @"CheckDownload"]);
         tr_bencDictAddInt(&settings, TR_PREFS_KEY_USPEED, [fDefaults integerForKey: @"UploadLimit"]);
         tr_bencDictAddBool(&settings, TR_PREFS_KEY_USPEED_ENABLED, [fDefaults boolForKey: @"CheckUpload"]);
+        
+        //hidden prefs
+        if ([fDefaults objectForKey: @"BindAddressIPv4"])
+            tr_bencDictAddStr(&settings, TR_PREFS_KEY_BIND_ADDRESS_IPV4, [[fDefaults stringForKey: @"BindAddressIPv4"] UTF8String]);
+        if ([fDefaults objectForKey: @"BindAddressIPv6"])
+            tr_bencDictAddStr(&settings, TR_PREFS_KEY_BIND_ADDRESS_IPV6, [[fDefaults stringForKey: @"BindAddressIPv6"] UTF8String]);
         
         tr_bencDictAddBool(&settings, TR_PREFS_KEY_BLOCKLIST_ENABLED, [fDefaults boolForKey: @"Blocklist"]);
         tr_bencDictAddBool(&settings, TR_PREFS_KEY_DHT_ENABLED, [fDefaults boolForKey: @"DHTGlobal"]);
@@ -973,17 +980,17 @@ static void sleepCallback(void * controller, io_service_t y, natural_t messageTy
         return;
     }
     
-    Torrent * torrent;
-    if (!(torrent = [[Torrent alloc] initWithMagnetAddress: address location: nil lib: fLib]))
-    {
-        [self invalidOpenMagnetAlert: address];
-        return;
-    }
-    
     //determine download location
     NSString * location = nil;
     if ([fDefaults boolForKey: @"DownloadLocationConstant"])
         location = [[fDefaults stringForKey: @"DownloadFolder"] stringByExpandingTildeInPath];
+    
+    Torrent * torrent;
+    if (!(torrent = [[Torrent alloc] initWithMagnetAddress: address location: location lib: fLib]))
+    {
+        [self invalidOpenMagnetAlert: address];
+        return;
+    }
     
     //change the location if the group calls for it (this has to wait until after the torrent is created)
     if ([[GroupsController groups] usesCustomDownloadLocationForIndex: [torrent groupValue]])

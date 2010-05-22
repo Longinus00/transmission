@@ -27,7 +27,9 @@
 #import "FileListNode.h"
 #import "NSStringAdditions.h"
 #import "TrackerNode.h"
-#import "utils.h" //tr_new
+
+#import "transmission.h" // required by utils.h
+#import "utils.h" // tr_new()
 
 @interface Torrent (Private)
 
@@ -100,7 +102,6 @@ int trashDataFile(const char * filename)
     return self;
 }
 
-#warning need location (and use it)?
 - (id) initWithMagnetAddress: (NSString *) address location: (NSString *) location lib: (tr_session *) lib
 {
     self = [self initWithPath: nil hash: nil torrentStruct: nil magnetAddress: address
@@ -1199,6 +1200,11 @@ int trashDataFile(const char * filename)
 - (NSInteger) totalPeersDHT
 {
     return fStat->peersFrom[TR_PEER_FROM_DHT];
+}
+
+- (NSInteger) totalPeersLocal
+{
+    return fStat->peersFrom[TR_PEER_FROM_LPD];
 }
 
 - (NSInteger) totalPeersLTEP

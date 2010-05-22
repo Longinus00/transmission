@@ -72,9 +72,7 @@
 
 - (void) setInfoForTorrents: (NSArray *) torrents
 {
-    if (fTorrents && [fTorrents isEqualToArray: torrents])
-        return;
-    
+    //don't check if it's the same in case the metadata changed
     [fTorrents release];
     fTorrents = [torrents retain];
     
@@ -132,7 +130,7 @@
         [fHashField setStringValue: hashString];
         [fHashField setToolTip: hashString];
         [fSecureField setStringValue: [torrent privateTorrent]
-                        ? NSLocalizedString(@"Private Torrent, PEX and DHT automatically disabled", "Inspector -> private torrent")
+                        ? NSLocalizedString(@"Private Torrent, non-tracker peer discovery disabled", "Inspector -> private torrent")
                         : NSLocalizedString(@"Public Torrent", "Inspector -> private torrent")];
         
         NSString * commentString = [torrent comment];

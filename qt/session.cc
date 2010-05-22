@@ -35,6 +35,7 @@
 #include "session.h"
 #include "session-dialog.h"
 #include "torrent.h"
+#include "utils.h"
 
 // #define DEBUG_HTTP
 
@@ -128,31 +129,34 @@ Session :: updatePref( int key )
 {
     if( myPrefs.isCore( key ) ) switch( key )
     {
-        case Prefs :: ALT_SPEED_LIMIT_UP:
         case Prefs :: ALT_SPEED_LIMIT_DOWN:
         case Prefs :: ALT_SPEED_LIMIT_ENABLED:
         case Prefs :: ALT_SPEED_LIMIT_TIME_BEGIN:
-        case Prefs :: ALT_SPEED_LIMIT_TIME_END:
-        case Prefs :: ALT_SPEED_LIMIT_TIME_ENABLED:
         case Prefs :: ALT_SPEED_LIMIT_TIME_DAY:
-        case Prefs :: BLOCKLIST_ENABLED:
+        case Prefs :: ALT_SPEED_LIMIT_TIME_ENABLED:
+        case Prefs :: ALT_SPEED_LIMIT_TIME_END:
+        case Prefs :: ALT_SPEED_LIMIT_UP:
         case Prefs :: BLOCKLIST_DATE:
+        case Prefs :: BLOCKLIST_ENABLED:
         case Prefs :: DHT_ENABLED:
         case Prefs :: DOWNLOAD_DIR:
+        case Prefs :: DSPEED:
+        case Prefs :: DSPEED_ENABLED:
         case Prefs :: INCOMPLETE_DIR:
         case Prefs :: INCOMPLETE_DIR_ENABLED:
+        case Prefs :: LPD_ENABLED:
         case Prefs :: PEER_LIMIT_GLOBAL:
         case Prefs :: PEER_LIMIT_TORRENT:
-        case Prefs :: USPEED_ENABLED:
-        case Prefs :: USPEED:
-        case Prefs :: DSPEED_ENABLED:
-        case Prefs :: DSPEED:
-        case Prefs :: START:
-        case Prefs :: TRASH_ORIGINAL:
-        case Prefs :: PEX_ENABLED:
-        case Prefs :: PORT_FORWARDING:
         case Prefs :: PEER_PORT:
         case Prefs :: PEER_PORT_RANDOM_ON_START:
+        case Prefs :: PEX_ENABLED:
+        case Prefs :: PORT_FORWARDING:
+        case Prefs :: SCRIPT_TORRENT_DONE_ENABLED:
+        case Prefs :: SCRIPT_TORRENT_DONE_FILENAME:
+        case Prefs :: START:
+        case Prefs :: TRASH_ORIGINAL:
+        case Prefs :: USPEED:
+        case Prefs :: USPEED_ENABLED:
             sessionSet( myPrefs.keyStr(key), myPrefs.variant(key) );
             break;
 
@@ -858,6 +862,14 @@ Session :: addTorrent( QString filename )
     addTorrent( filename, myPrefs.getString( Prefs::DOWNLOAD_DIR ) );
 }
 
+namespace
+{
+    bool isLink( const QString& str )
+    {
+        return Utils::isMagnetLink(str) || Utils::isURL(str);
+    }
+}
+
 void
 Session :: addTorrent( QString key, QString localPath )
 {
@@ -868,23 +880,29 @@ Session :: addTorrent( QString key, QString localPath )
     tr_bencDictAddStr( args, "download-dir", qPrintable(localPath) );
     tr_bencDictAddBool( args, "paused", !myPrefs.getBool( Prefs::START ) );
 
-    // if "key" is a readable local file, add it as metadata...
-    // otherwise it's probably a URL or magnet link, so pass it along
-    // for the daemon to handle
-    QFile file( key );
-    file.open( QIODevice::ReadOnly );
-    const QByteArray raw( file.readAll( ) );
-    file.close( );
-    if( !raw.isEmpty( ) )
-    {
-        int b64len = 0;
-        char * b64 = tr_base64_encode( raw.constData(), raw.size(), &b64len );
-        tr_bencDictAddRaw( args, "metainfo", b64, b64len  );
-        tr_free( b64 );
-    }
-    else
-    {
+    // figure out what to do with "key"....
+    bool keyHandled = false;
+    if( !keyHandled && isLink( key  )) {
         tr_bencDictAddStr( args, "filename", key.toUtf8().constData() );
+        keyHandled = true; // it's a URL or magnet link...
+    }
+    if( !keyHandled ) {
+        QFile file( key );
+        file.open( QIODevice::ReadOnly );
+        const QByteArray raw( file.readAll( ) );
+        file.close( );
+        if( !raw.isEmpty( ) ) {
+            int b64len = 0;
+            char * b64 = tr_base64_encode( raw.constData(), raw.size(), &b64len );
+            tr_bencDictAddRaw( args, "metainfo", b64, b64len  );
+            tr_free( b64 );
+            keyHandled = true; // it's a local file...
+        }
+    }
+    if( !keyHandled ) {
+        const QByteArray tmp = key.toUtf8();
+        tr_bencDictAddRaw( args, "metainfo", tmp.constData(), tmp.length() );
+        keyHandled = true; // treat it as base64
     }
 
     exec( &top );

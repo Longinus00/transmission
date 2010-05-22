@@ -43,10 +43,10 @@ void        tr_ctorInitTorrentWanted( const tr_ctor * ctor, tr_torrent * tor );
 **/
 
 /* just like tr_torrentSetFileDLs but doesn't trigger a fastresume save */
-void        tr_torrentInitFileDLs( tr_torrent *      tor,
-                                   tr_file_index_t * files,
-                                   tr_file_index_t   fileCount,
-                                   tr_bool           do_download );
+void        tr_torrentInitFileDLs( tr_torrent              * tor,
+                                   const tr_file_index_t   * files,
+                                   tr_file_index_t          fileCount,
+                                   tr_bool                  do_download );
 
 void        tr_torrentRecheckCompleteness( tr_torrent * );
 
@@ -130,6 +130,8 @@ tr_verify_state;
 void             tr_torrentSetVerifyState( tr_torrent      * tor,
                                            tr_verify_state   state );
 
+tr_torrent_activity tr_torrentGetActivity( tr_torrent * tor );
+
 struct tr_incomplete_metadata;
 
 /** @brief Torrent object */
@@ -197,6 +199,8 @@ struct tr_torrent
     time_t                     dhtAnnounce6At;
     tr_bool                    dhtAnnounceInProgress;
     tr_bool                    dhtAnnounce6InProgress;
+    
+    time_t                     lpdAnnounceAt;
 
     uint64_t                   downloadedCur;
     uint64_t                   downloadedPrev;
@@ -326,6 +330,13 @@ static inline tr_bool tr_torrentAllowsDHT( const tr_torrent * tor )
 {
     return ( tor != NULL )
         && ( tr_sessionAllowsDHT( tor->session ) )
+        && ( !tr_torrentIsPrivate( tor ) );
+}
+
+static inline tr_bool tr_torrentAllowsLPD( const tr_torrent * tor )
+{
+    return ( tor != NULL )
+        && ( tr_sessionAllowsLPD( tor->session ) )
         && ( !tr_torrentIsPrivate( tor ) );
 }
 

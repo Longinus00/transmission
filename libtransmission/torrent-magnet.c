@@ -75,8 +75,8 @@ tr_torrentSetMetadataSizeHint( tr_torrent * tor, int size )
         {
             int i;
             struct tr_incomplete_metadata * m;
-            int n = ( size + ( METADATA_PIECE_SIZE - 1 ) ) / METADATA_PIECE_SIZE;
-            dbgmsg( tor, "there are %d pieces", n );
+            const int n = ( size + ( METADATA_PIECE_SIZE - 1 ) ) / METADATA_PIECE_SIZE;
+            dbgmsg( tor, "metadata is %d bytes in %d pieces", size, n );
 
             m = tr_new( struct tr_incomplete_metadata, 1 );
             m->pieceCount = n;
@@ -306,14 +306,19 @@ tr_torrentGetMagnetLink( const tr_torrent * tor )
 {
     int i;
     char * ret;
+    const char * name;
     struct evbuffer * s;
 
     assert( tr_isTorrent( tor ) );
 
     s = evbuffer_new( );
     evbuffer_add_printf( s, "magnet:?xt=urn:btih:%s", tor->info.hashString );
-    evbuffer_add_printf( s, "%s", "&dn=" );
-    tr_http_escape( s, tr_torrentName( tor ), -1, TRUE );
+    name = tr_torrentName( tor );
+    if( name && *name )
+    {
+        evbuffer_add_printf( s, "%s", "&dn=" );
+        tr_http_escape( s, tr_torrentName( tor ), -1, TRUE );
+    }
     for( i=0; i<tor->info.trackerCount; ++i )
     {
         evbuffer_add_printf( s, "%s", "&tr=" );

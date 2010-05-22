@@ -30,6 +30,8 @@
 #import "NSApplicationAdditions.h"
 #import "NSStringAdditions.h"
 #import "UKKQueue.h"
+
+#import "transmission.h"
 #import "utils.h"
 
 #import <Sparkle/Sparkle.h>
@@ -477,6 +479,11 @@ tr_session * fHandle;
 - (void) setDHT: (id) sender
 {
     tr_sessionSetDHTEnabled(fHandle, [fDefaults boolForKey: @"DHTGlobal"]);
+}
+
+- (void) setLPD: (id) sender
+{
+    tr_sessionSetLPDEnabled(fHandle, [fDefaults boolForKey: @"LocalPeerDiscoveryGlobal"]);
 }
 
 - (void) setEncryptionMode: (id) sender
@@ -1147,6 +1154,10 @@ tr_session * fHandle;
     const BOOL dht = tr_sessionIsDHTEnabled(fHandle);
     [fDefaults setBool: dht forKey: @"DHTGlobal"];
     
+    //dht
+    const BOOL lds = tr_sessionIsLPDEnabled(fHandle);
+    [fDefaults setBool: lds forKey: @"LocalPeerDiscovery"];
+    
     //auto start
     const BOOL autoStart = !tr_sessionGetPaused(fHandle);
     [fDefaults setBool: autoStart forKey: @"AutoStartDownload"];
@@ -1228,6 +1239,8 @@ tr_session * fHandle;
         //pex handled by bindings
         
         //dht handled by bindings
+        
+        //lds handled by bindings
         
         [fPortField setIntValue: port];
         //port forwarding (nat) handled by bindings
