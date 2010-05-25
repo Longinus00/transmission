@@ -49,9 +49,6 @@
 #include <fcntl.h> /* O_LARGEFILE posix_fadvise */
 #include <unistd.h>
 
-#include <stdarg.h> /* some 1.4.x versions of evutil.h need this */
-#include <evutil.h>
-
 #include "transmission.h"
 #include "fdlimit.h"
 #include "net.h"
@@ -199,12 +196,6 @@ preallocateFileFull( const char * filename, uint64_t length )
     return success;
 }
 
-tr_bool
-tr_preallocate_file( const char * filename, uint64_t length )
-{
-    return preallocateFileFull( filename, length );
-}
-
 /* Like pread and pwrite, except that the position is undefined afterwards.
    And of course they are not thread-safe. */
 
@@ -227,7 +218,7 @@ tr_pread( int fd, void *buf, size_t count, off_t offset )
 }
 
 ssize_t
-tr_pwrite( int fd, void *buf, size_t count, off_t offset )
+tr_pwrite( int fd, const void *buf, size_t count, off_t offset )
 {
 #ifdef HAVE_PWRITE
     return pwrite( fd, buf, count, offset );
