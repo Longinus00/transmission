@@ -497,8 +497,7 @@ onVerifyTimer( int foo UNUSED, short bar UNUSED, void *vsession )
         {
             if( tor->failedState == TR_FAILED_TIME
                 && tor->error != TR_STAT_LOCAL_ERROR
-                && tr_cpHaveTotal( &tor->completion ) != 0
-                && tr_torrentGetActivity( tor ) != TR_STATUS_DOWNLOAD )
+                && tr_cpHaveTotal( &tor->completion ) != 0 )
             {
                 tr_torinf( tor, "Queueing suspect torrent for verify" );
                 tr_torrentVerify( tor );
