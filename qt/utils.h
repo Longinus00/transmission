@@ -28,6 +28,8 @@ class Utils: public QObject
         virtual ~Utils( ) { }
     public:
         static QString remoteFileChooser( QWidget * parent, const QString& title, const QString& myPath, bool dir, bool local );
+        static QString truncateDouble( double x, int precision );
+        static QString formatPercent( double x );
         static QString sizeToString( double bytes );
         static QString speedToString( const Speed& speed );
         static QString ratioToString( double ratio );

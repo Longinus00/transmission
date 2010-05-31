@@ -310,7 +310,7 @@ Details :: refresh( )
             string = none;
         else {
             const double d = 100.0 * ( sizeWhenDone ? ( sizeWhenDone - leftUntilDone ) / sizeWhenDone : 1 );
-            QString pct = locale.toString( d, 'f', 2 );
+            QString pct = Utils::formatPercent( d );
             if( !haveUnverified )
                 string = tr( "%1 (%2%)" )
                              .arg( Utils :: sizeToString( haveVerified + haveUnverified ) )
@@ -328,7 +328,7 @@ Details :: refresh( )
     if( sizeWhenDone < 1 )
         string = none;
     else
-        string.sprintf( "%'.1f%%", ( 100.0 * available ) / sizeWhenDone );
+        string = QString( "%1%" ).arg( Utils::formatPercent( ( 100.0 * available ) / sizeWhenDone ) );
     myAvailabilityLabel->setText( string );
 
     // myDownloadedLabel
@@ -859,7 +859,8 @@ Details :: refresh( )
 
             item->setText( COL_UP, peer.rateToPeer.isZero() ? "" : Utils::speedToString( peer.rateToPeer ) );
             item->setText( COL_DOWN, peer.rateToClient.isZero() ? "" : Utils::speedToString( peer.rateToClient ) );
-            item->setText( COL_PERCENT, peer.progress > 0 ? QString( "%1%" ).arg( locale.toString((int)(peer.progress*100.0))) : "" );
+            item->setText( COL_PERCENT,
+                peer.progress > 0 ? QString( "%1%" ).arg( Utils::truncateDouble( peer.progress * 100.0, 0 ) ) : "" );
             item->setText( COL_STATUS, code );
             item->setToolTip( COL_STATUS, codeTip );
 
