@@ -114,6 +114,27 @@ static const double MiB = 1024.0 * 1024.0;
 static const double GiB = 1024.0 * 1024.0 * 1024.0;
 
 static char*
+truncateDouble( char * buf, double x, int precision, size_t buflen )
+{
+    tr_snprintf( buf, buflen, "%.*f", precision, tr_truncd( x, precision ) );
+
+    return buf;
+}
+
+static char*
+formatPercent( char * buf, double x, size_t buflen )
+{
+    if( x < 10.0 )
+        truncateDouble( buf, x, 2, buflen );
+    else if( x < 100.0 )
+        truncateDouble( buf, x, 1, buflen );
+    else
+        truncateDouble( buf, x, 0, buflen );
+
+    return buf;
+}
+
+static char*
 strlratio2( char * buf, double ratio, size_t buflen )
 {
     return tr_strratio( buf, buflen, ratio, "Inf" );
@@ -785,7 +806,7 @@ printDetails( tr_benc * top )
             if( tr_bencDictFindInt( t, "sizeWhenDone", &i )
               && tr_bencDictFindInt( t, "leftUntilDone", &j ) )
             {
-                strlratio( buf, 100.0 * ( i - j ), i, sizeof( buf ) );
+                formatPercent( buf, 100.0 * ( i - j ) / i, sizeof( buf ) );
                 printf( "  Percent Done: %s%%\n", buf );
             }
 
@@ -811,7 +832,8 @@ printDetails( tr_benc * top )
                     && tr_bencDictFindInt( t, "leftUntilDone", &k) )
                 {
                     j += i - k;
-                    printf( "  Availability: %.1f%%\n", ( 100 * j ) / (double) i );
+                    formatPercent( buf, 100.0 * j / i, sizeof( buf ) );
+                    printf( "  Availability: %s%%\n", buf );
                 }
                 if( tr_bencDictFindInt( t, "totalSize", &j ) )
                 {
@@ -1279,7 +1301,7 @@ printTorrentList( tr_benc * top )
                 char errorMark;
 
                 if( sizeWhenDone )
-                    tr_snprintf( doneStr, sizeof( doneStr ), "%d%%", (int)( 100.0 * ( sizeWhenDone - leftUntilDone ) / sizeWhenDone ) );
+                    truncateDouble( doneStr, 100.0 * ( sizeWhenDone - leftUntilDone ) / sizeWhenDone, 0, sizeof( doneStr ) );
                 else
                     tr_strlcpy( doneStr, "n/a", sizeof( doneStr ) );
 
@@ -1294,7 +1316,7 @@ printTorrentList( tr_benc * top )
                 else
                     errorMark = ' ';
                 printf(
-                    "%4d%c  %4s  %9s  %-8s  %6.1f  %6.1f  %5s  %-11s  %s\n",
+                    "%4d%c %4s%%  %9s  %-8s  %6.1f  %6.1f  %5s  %-11s  %s\n",
                     (int)id, errorMark,
                     doneStr,
                     haveStr,
