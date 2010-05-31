@@ -106,6 +106,27 @@ tr_strlratio( char * buf, double ratio, size_t buflen )
 }
 
 char*
+truncateDouble( char * buf, double x, int precision, size_t buflen )
+{
+    tr_snprintf( buf, buflen, "%.*f", precision, tr_truncd( x, precision ) );
+
+    return buf;
+}
+
+char*
+formatPercent( char * buf, double x, size_t buflen )
+{
+    if( x < 10.0 )
+        truncateDouble( buf, x, 2, buflen );
+    else if( x < 100.0 )
+        truncateDouble( buf, x, 1, buflen );
+    else
+        truncateDouble( buf, x, 0, buflen );
+
+    return buf;
+}
+
+char*
 tr_strlsize( char * buf, guint64 bytes, size_t buflen )
 {
     if( !bytes )

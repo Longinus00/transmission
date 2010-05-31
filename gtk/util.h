@@ -39,6 +39,11 @@ enum
 };
 const char * gtr_get_unicode_string( int );
 
+/* return a truncated double as a string */
+char* truncateDouble( char * buf, double x, int precision, size_t buflen );
+
+/* return a percent formatted string of either x.xx, xx.x or xxx */
+char* formatPercent( char * buf, double x, size_t buflen );
 
 /* return a human-readable string for the size given in bytes. */
 char* tr_strlsize( char * buf, guint64  size, size_t buflen );
