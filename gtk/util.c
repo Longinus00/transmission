@@ -106,7 +106,7 @@ tr_strlratio( char * buf, double ratio, size_t buflen )
 }
 
 char*
-truncateDouble( char * buf, double x, int precision, size_t buflen )
+tr_strtruncd( char * buf, double x, int precision, size_t buflen )
 {
     tr_snprintf( buf, buflen, "%.*f", precision, tr_truncd( x, precision ) );
 
@@ -114,14 +114,14 @@ truncateDouble( char * buf, double x, int precision, size_t buflen )
 }
 
 char*
-formatPercent( char * buf, double x, size_t buflen )
+tr_strfpercent( char * buf, double x, size_t buflen )
 {
     if( x < 10.0 )
-        truncateDouble( buf, x, 2, buflen );
+        tr_strtruncd( buf, x, 2, buflen );
     else if( x < 100.0 )
-        truncateDouble( buf, x, 1, buflen );
+        tr_strtruncd( buf, x, 1, buflen );
     else
-        truncateDouble( buf, x, 0, buflen );
+        tr_strtruncd( buf, x, 0, buflen );
 
     return buf;
 }

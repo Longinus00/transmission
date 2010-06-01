@@ -47,22 +47,21 @@ Utils :: remoteFileChooser( QWidget * parent, const QString& title, const QStrin
 }
 
 QString
-Utils :: truncateDouble( double x, int precision )
+Utils :: truncateDoubleToString( double x, int precision )
 {
-    return QString( "%1" ).arg( tr_truncd( x, precision ), 0, 'f', precision );
 }
 
 QString
-Utils :: formatPercent( double x )
+Utils :: percentToString( double x )
 {
     QString str;
 
     if( x < 10.0 )
-        str = truncateDouble( x, 2 );
+        str = truncateDoubleToString( x, 2 );
     else if( x < 100.0 )
-        str = truncateDouble( x, 1 );
+        str = truncateDoubleToString( x, 1 );
     else
-        str = truncateDouble( x, 0 );
+        str = truncateDoubleToString( x, 0 );
 
     return str;
 }
@@ -99,9 +98,9 @@ Utils :: ratioToString( double ratio )
     if( (int)ratio == TR_RATIO_NA )
         str = tr( "None" );
     else if( (int)ratio == TR_RATIO_INF )
-        str = QString::fromUtf8( "\xE2\x88\x9E" );
+        str = trUtf8( "\xE2\x88\x9E" );
     else
-        str = formatPercent( ratio );
+        str = percentToString( ratio );
 
     return str;
 }
