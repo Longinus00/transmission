@@ -18,6 +18,7 @@
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QInputDialog>
+#include <QLocale>
 #include <QObject>
 #include <QSet>
 #include <QStyle>
@@ -49,6 +50,9 @@ Utils :: remoteFileChooser( QWidget * parent, const QString& title, const QStrin
 QString
 Utils :: truncateDoubleToString( double x, int precision )
 {
+    QLocale locale;
+
+    return locale.toString( tr_truncd( x, precision ), 'f', precision );
 }
 
 QString
