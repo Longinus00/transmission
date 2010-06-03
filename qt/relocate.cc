@@ -13,9 +13,7 @@
 #include <QApplication>
 #include <QDialogButtonBox>
 #include <QDir>
-#include <QFileDialog>
 #include <QFileIconProvider>
-#include <QInputDialog>
 #include <QLabel>
 #include <QPushButton>
 #include <QRadioButton>
@@ -29,6 +27,7 @@
 #include "session.h"
 #include "torrent.h"
 #include "torrent-model.h"
+#include "utils.h"
 
 bool RelocateDialog :: myMoveFlag = true;
 
@@ -49,25 +48,11 @@ RelocateDialog :: onFileSelected( const QString& path )
 void
 RelocateDialog :: onDirButtonClicked( )
 {
-    if( mySession.isLocal() )
-    {
-        QFileDialog * d = new QFileDialog( this );
-        d->setFileMode( QFileDialog::Directory );
-        d->selectFile( myPath );
-        d->setOption( QFileDialog::ShowDirsOnly, true );
-        connect( d, SIGNAL(fileSelected(const QString&)), this, SLOT(onFileSelected(const QString&)));
-        d->show( );
-    }
-    else
-    {
-        QInputDialog * d = new QInputDialog( this );
-        d->setInputMode( QInputDialog::TextInput );
-        d->setWindowTitle( tr( "Set Directory" ) );
-        d->setLabelText( tr( "Enter a location:" ) );
-        d->setTextValue( myPath );
-        connect( d, SIGNAL( textValueSelected( const QString& ) ), this, SLOT( onFileSelected( const QString& ) ) );
-        d->show( );
-    }
+    const QString title = tr( "Select Location" );
+    const QString path = Utils::remoteFileChooser( this, title, myPath, true, mySession.isLocal() );
+
+    if( !path.isEmpty() )
+        onFileSelected( path );
 }
 
 void
