@@ -15,6 +15,7 @@
 #include <QDir>
 #include <QFileDialog>
 #include <QFileIconProvider>
+#include <QInputDialog>
 #include <QLabel>
 #include <QPushButton>
 #include <QRadioButton>
@@ -26,8 +27,8 @@
 #include "hig.h"
 #include "relocate.h"
 #include "session.h"
-
-QString RelocateDialog :: myPath;
+#include "torrent.h"
+#include "torrent-model.h"
 
 bool RelocateDialog :: myMoveFlag = true;
 
@@ -48,11 +49,25 @@ RelocateDialog :: onFileSelected( const QString& path )
 void
 RelocateDialog :: onDirButtonClicked( )
 {
-    QFileDialog * d = new QFileDialog( this );
-    d->setFileMode( QFileDialog::Directory );
-    d->selectFile( myPath );
-    d->show( );
-    connect( d, SIGNAL(fileSelected(const QString&)), this, SLOT(onFileSelected(const QString&)));
+    if( mySession.isLocal() )
+    {
+        QFileDialog * d = new QFileDialog( this );
+        d->setFileMode( QFileDialog::Directory );
+        d->selectFile( myPath );
+        d->setOption( QFileDialog::ShowDirsOnly, true );
+        connect( d, SIGNAL(fileSelected(const QString&)), this, SLOT(onFileSelected(const QString&)));
+        d->show( );
+    }
+    else
+    {
+        QInputDialog * d = new QInputDialog( this );
+        d->setInputMode( QInputDialog::TextInput );
+        d->setWindowTitle( tr( "Set Directory" ) );
+        d->setLabelText( tr( "Enter a location:" ) );
+        d->setTextValue( myPath );
+        connect( d, SIGNAL( textValueSelected( const QString& ) ), this, SLOT( onFileSelected( const QString& ) ) );
+        d->show( );
+    }
 }
 
 void
@@ -61,9 +76,10 @@ RelocateDialog :: onMoveToggled( bool b )
     myMoveFlag = b;
 }
 
-RelocateDialog :: RelocateDialog( Session& session, const QSet<int>& ids, QWidget * parent ):
+RelocateDialog :: RelocateDialog( Session& session, TorrentModel& model, const QSet<int>& ids, QWidget * parent ):
     QDialog( parent ),
     mySession( session ),
+    myModel( model ),
     myIds( ids )
 {
     const int iconSize( style( )->pixelMetric( QStyle :: PM_SmallIconSize ) );
@@ -74,8 +90,18 @@ RelocateDialog :: RelocateDialog( Session& session, const QSet<int>& ids, QWidge
     QRadioButton * find_rb;
     setWindowTitle( tr( "Set Torrent Location" ) );
 
-    if( myPath.isEmpty( ) )
-        myPath = QDir::homePath( );
+    foreach( int id, myIds ) {
+        const Torrent * tor = myModel.getTorrentFromId( id );
+        if( myPath.isEmpty() )
+            myPath = tor->getPath();
+        else if( myPath != tor->getPath() )
+        {
+            if( mySession.isLocal() )
+                myPath = QDir::homePath( );
+            else
+                myPath = QString( "/" );
+        }
+    }
 
     HIG * hig = new HIG( );
     hig->addSectionTitle( tr( "Set Location" ) );
@@ -98,4 +124,5 @@ RelocateDialog :: RelocateDialog( Session& session, const QSet<int>& ids, QWidge
     connect( buttons, SIGNAL(rejected()), this, SLOT(deleteLater()));
     connect( buttons, SIGNAL(accepted()), this, SLOT(onSetLocation()));
     layout->addWidget( buttons );
+    QWidget::setAttribute( Qt::WA_DeleteOnClose, true );
 }

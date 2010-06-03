@@ -667,7 +667,7 @@ TrMainWindow :: openProperties( )
 void
 TrMainWindow :: setLocation( )
 {
-    QDialog * d = new RelocateDialog( mySession, getSelectedTorrents(), this );
+    QDialog * d = new RelocateDialog( mySession, myModel, getSelectedTorrents(), this );
     d->show( );
 }
 
