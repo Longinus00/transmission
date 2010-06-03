@@ -323,10 +323,14 @@ Details :: refresh( )
     myHaveLabel->setText( string );
 
     // myAvailabilityLabel
-    if( sizeWhenDone < 1 )
+    if( torrents.empty( ) )
         string = none;
-    else
-        string = QString( "%1%" ).arg( Utils::percentToString( ( 100.0 * available ) / sizeWhenDone ) );
+    else {
+        if( sizeWhenDone == 0 )
+            string = none;
+        else
+            string = QString( "%1%" ).arg( Utils::percentToString( ( 100.0 * available ) / sizeWhenDone ) );
+    }
     myAvailabilityLabel->setText( string );
 
     // myDownloadedLabel
