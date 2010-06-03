@@ -1,0 +1,9 @@
+Index: transmission-1.40-2ubuntu1/gtk/transmission.desktop.in
+===================================================================
+--- transmission-1.40-2ubuntu1.orig/gtk/transmission.desktop.in    2008-12-09 18:57:13.000000000 +0000
++++ transmission-1.40-2ubuntu1/gtk/transmission.desktop.in 2008-12-09 18:58:54.000000000 +0000
+@@ -9,3 +9,4 @@
+ Type=Application
+ MimeType=application/x-bittorrent;
+ Categories=Network;FileTransfer;P2P;GTK;
++X-Ubuntu-Gettext-Domain=transmission
