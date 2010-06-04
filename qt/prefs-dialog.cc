@@ -494,7 +494,7 @@ PrefsDialog :: onScriptClicked( void )
 {
     const QString title = tr( "Select \"Torrent Done\" Script" );
     const QString myPath = myPrefs.getString( Prefs::SCRIPT_TORRENT_DONE_FILENAME );
-    const QString path = Utils::remoteFileChooser( this, title, myPath, false, mySession.isLocal() );
+    const QString path = Utils::remoteFileChooser( this, title, myPath, false, mySession.isServer() );
 
     if( !path.isEmpty() )
         onLocationSelected( path, Prefs::SCRIPT_TORRENT_DONE_FILENAME );
@@ -505,7 +505,7 @@ PrefsDialog :: onIncompleteClicked( void )
 {
     const QString title = tr( "Select Incomplete Directory" );
     const QString myPath = myPrefs.getString( Prefs::INCOMPLETE_DIR );
-    const QString path = Utils::remoteFileChooser( this, title, myPath, true, mySession.isLocal() );
+    const QString path = Utils::remoteFileChooser( this, title, myPath, true, mySession.isServer() );
 
     if( !path.isEmpty() )
         onLocationSelected( path, Prefs::INCOMPLETE_DIR );
@@ -527,7 +527,7 @@ PrefsDialog :: onDestinationClicked( void )
 {
     const QString title = tr( "Select Destination" );
     const QString myPath = myPrefs.getString( Prefs::DOWNLOAD_DIR );
-    const QString path = Utils::remoteFileChooser( this, title, myPath, true, mySession.isLocal() );
+    const QString path = Utils::remoteFileChooser( this, title, myPath, true, mySession.isServer() );
 
     if( !path.isEmpty() )
         onLocationSelected( path, Prefs::DOWNLOAD_DIR );

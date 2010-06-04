@@ -49,7 +49,7 @@ void
 RelocateDialog :: onDirButtonClicked( )
 {
     const QString title = tr( "Select Location" );
-    const QString path = Utils::remoteFileChooser( this, title, myPath, true, mySession.isLocal() );
+    const QString path = Utils::remoteFileChooser( this, title, myPath, true, mySession.isServer() );
 
     if( !path.isEmpty() )
         onFileSelected( path );
@@ -81,7 +81,7 @@ RelocateDialog :: RelocateDialog( Session& session, TorrentModel& model, const Q
             myPath = tor->getPath();
         else if( myPath != tor->getPath() )
         {
-            if( mySession.isLocal() )
+            if( mySession.isServer() )
                 myPath = QDir::homePath( );
             else
                 myPath = QString( "/" );
