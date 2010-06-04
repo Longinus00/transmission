@@ -1,0 +1,6 @@
+Currently transmission overwrites the settings.json configuration file
+on exit. This means any changes made manually to the file while 
+transmission's running will be silently ignored.
+
+This is a know problem being currently worked on and it's reported here:
+http://bugs.debian.org/539936

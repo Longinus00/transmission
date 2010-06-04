@@ -219,15 +219,6 @@ gtr_localtime( time_t time )
     return g_locale_to_utf8( buf, -1, NULL, NULL, NULL );
 }
 
-char *
-gtr_localtime2( char * buf, time_t time, size_t buflen )
-{
-    char * tmp = gtr_localtime( time );
-    g_strlcpy( buf, tmp, buflen );
-    g_free( tmp );
-    return buf;
-}
-
 int
 gtr_mkdir_with_parents( const char * path, int mode )
 {
@@ -572,6 +563,7 @@ gtr_dbus_add_torrent( const char * filename )
         if( proxy )
             dbus_g_proxy_call( proxy, "AddMetainfo", &err,
                                G_TYPE_STRING, payload,
+                               G_TYPE_STRING, filename,
                                G_TYPE_INVALID,
                                G_TYPE_BOOLEAN, &handled,
                                G_TYPE_INVALID );

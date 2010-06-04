@@ -35,6 +35,7 @@
 #include "fdlimit.h" /* tr_fdTorrentClose */
 #include "magnet.h"
 #include "metainfo.h"
+#include "peer-common.h" /* MAX_BLOCK_SIZE */
 #include "peer-mgr.h"
 #include "platform.h" /* TR_PATH_DELIMITER_STR */
 #include "ptrarray.h"
@@ -45,11 +46,6 @@
 #include "utils.h"
 #include "verify.h"
 #include "version.h"
-
-enum
-{
-    MAX_BLOCK_SIZE = 1024 * 16
-};
 
 /***
 ****
@@ -1730,6 +1726,12 @@ tr_torrentRecheckCompleteness( tr_torrent * tor )
 
         if( tr_torrentIsSeed( tor ) )
         {
+            if( recentChange )
+            {
+                tr_announcerTorrentCompleted( tor );
+                tor->doneDate = tor->anyDate = tr_time( );
+            }
+
             tr_torrentCheckSeedRatio( tor );
 
             if( tor->currentDir == tor->incompleteDir )
@@ -1740,13 +1742,6 @@ tr_torrentRecheckCompleteness( tr_torrent * tor )
         }
 
         fireCompletenessChange( tor, completeness );
-
-        if( recentChange && tr_torrentIsSeed( tor ) )
-        {
-            tr_announcerTorrentCompleted( tor );
-
-            tor->doneDate = tor->anyDate = tr_time( );
-        }
 
         tr_torrentSetDirty( tor );
     }
@@ -2521,27 +2516,24 @@ struct LocationData
 };
 
 static tr_bool
-sameInode( const char * path1, const char * path2 )
+isSameLocation( const char * path1, const char * path2 )
 {
-    int i1, i2;
     struct stat s1, s2;
+    const int err1 = stat( path1, &s1 );
+    const int err2 = stat( path2, &s2 );
 
-    s1.st_ino = 1;
-    i1 = stat( path1, &s1 );
-
-    s2.st_ino = 2;
-    i2 = stat( path2, &s2 );
-
-    if( !i1 && !i2 ) {
-        tr_dbg( "path1 inode is %"PRIu64"; path2 inode is %"PRIu64,
-                (uint64_t)s1.st_ino,
-                (uint64_t)s2.st_ino );
-        return s1.st_ino == s2.st_ino;
+    if( !err1 && !err2 ) {
+        tr_dbg( "path1 dev:inode is %"PRIu64":%"PRIu64"; "
+                "path2 dev:inode is %"PRIu64":%"PRIu64,
+                (uint64_t)s1.st_dev, (uint64_t)s1.st_ino,
+                (uint64_t)s2.st_dev, (uint64_t)s2.st_ino );
+        return ( s1.st_dev == s2.st_dev )
+            && ( s1.st_ino == s2.st_ino );
     }
 
     /* either one, or the other, or both don't exist... */
-    tr_dbg( "stat(%s) returned %d\n", path1, i1 );
-    tr_dbg( "stat(%s) returned %d\n", path2, i2 );
+    tr_dbg( "stat(%s) returned %d\n", path1, err1 );
+    tr_dbg( "stat(%s) returned %d\n", path2, err2 );
     return FALSE;
 }
 
@@ -2563,7 +2555,7 @@ setLocation( void * vdata )
 
     tr_mkdirp( location, 0777 );
 
-    if( !sameInode( location, tor->currentDir ) )
+    if( !isSameLocation( location, tor->currentDir ) )
     {
         tr_file_index_t i;
 

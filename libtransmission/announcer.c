@@ -61,7 +61,7 @@ enum
     MAX_TRACKER_RESPONSE_TIME_SECS = ( 60 * 2 ),
 
     /* the value of the 'numwant' argument passed in tracker requests. */
-    NUMWANT = 200,
+    NUMWANT = 80,
 
     /* how long to put slow (nonresponsive) trackers in the penalty box */
     SLOW_HOST_PENALTY_SECS = ( 60 * 10 ),
@@ -1536,13 +1536,19 @@ getNextAnnounceEvent( tr_tier * tier )
     assert( tier != NULL );
     assert( tr_isTorrent( tier->tor ) );
 
-    /* special case #1: if "stopped" is in the queue, ignore everything before it */
     events = (const char**) tr_ptrArrayPeek( &tier->announceEvents, &n );
+
+    /* special case #1: if "stopped" is in the queue,
+     * ignore everything before it except "completed" */
     if( pos == -1 ) {
-        for( i=0; i<n; ++i )
+        tr_bool completed = FALSE;
+        for( i = 0; i < n; ++i ) {
+            if( !strcmp( events[i], "completed" ) )
+                completed = TRUE;
             if( !strcmp( events[i], "stopped" ) )
                 break;
-        if( i <  n )
+        }
+        if( !completed && ( i <  n ) )
             pos = i;
     }
 
