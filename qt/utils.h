@@ -28,10 +28,10 @@ class Utils: public QObject
         virtual ~Utils( ) { }
     public:
         static QString remoteFileChooser( QWidget * parent, const QString& title, const QString& myPath, bool dir, bool local );
-        static QString truncateDoubleToString( double x, int precision );
-        static QString percentToString( double x );
         static QString sizeToString( double bytes );
         static QString speedToString( const Speed& speed );
+        static QString truncateDoubleToString( double x, int precision );
+        static QString percentToString( double x );
         static QString ratioToString( double ratio );
         static QString timeToString( int seconds );
         static const QIcon& guessMimeIcon( const QString& filename );

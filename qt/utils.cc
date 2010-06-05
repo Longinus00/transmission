@@ -48,29 +48,6 @@ Utils :: remoteFileChooser( QWidget * parent, const QString& title, const QStrin
 }
 
 QString
-Utils :: truncateDoubleToString( double x, int precision )
-{
-    QLocale locale;
-
-    return locale.toString( tr_truncd( x, precision ), 'f', precision );
-}
-
-QString
-Utils :: percentToString( double x )
-{
-    QString str;
-
-    if( x < 10.0 )
-        str = truncateDoubleToString( x, 2 );
-    else if( x < 100.0 )
-        str = truncateDoubleToString( x, 1 );
-    else
-        str = truncateDoubleToString( x, 0 );
-
-    return str;
-}
-
-QString
 Utils :: sizeToString( double bytes )
 {
     if( !bytes )
@@ -92,6 +69,29 @@ Utils :: speedToString( const Speed& speed )
         tr_formatter_speed( buf, speed.bps( ), sizeof( buf ) );
         return buf;
     }
+}
+
+QString
+Utils :: truncateDoubleToString( double x, int precision )
+{
+    QLocale locale;
+
+    return locale.toString( tr_truncd( x, precision ), 'f', precision );
+}
+
+QString
+Utils :: percentToString( double x )
+{
+    QString str;
+
+    if( x < 10.0 )
+        str = truncateDoubleToString( x, 2 );
+    else if( x < 100.0 )
+        str = truncateDoubleToString( x, 1 );
+    else
+        str = truncateDoubleToString( x, 0 );
+
+    return str;
 }
 
 QString
