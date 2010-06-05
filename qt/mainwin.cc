@@ -454,12 +454,14 @@ TrMainWindow :: createStatusBar( )
 
         p = myOptionsButton = new TrIconPushButton( this );
         p->setIcon( QIcon( ":/icons/options.png" ) );
+        p->setIconSize( QPixmap( ":/icons/options.png" ).size() );
         p->setFlat( true );
         p->setMenu( createOptionsMenu( ) );
         h->addWidget( p );
 
         p = myAltSpeedButton = new TrIconPushButton( this );
         p->setIcon( myPrefs.get<bool>(Prefs::ALT_SPEED_LIMIT_ENABLED) ? mySpeedModeOnIcon : mySpeedModeOffIcon );
+        p->setIconSize( QPixmap( ":/icons/alt-limit-on.png" ).size() );
         p->setFlat( true );
         h->addWidget( p );
         connect( p, SIGNAL(clicked()), this, SLOT(toggleSpeedMode()));
@@ -490,6 +492,7 @@ TrMainWindow :: createStatusBar( )
         connect( ui.action_SessionTransfer, SIGNAL(triggered()), this, SLOT(showSessionTransfer()));
         p = myStatsModeButton = new TrIconPushButton( this );
         p->setIcon( QIcon( ":/icons/ratio.png" ) );
+        p->setIconSize( QPixmap( ":/icons/ratio.png" ).size() );
         p->setFlat( true );
         p->setMenu( m );
         h->addWidget( p );
