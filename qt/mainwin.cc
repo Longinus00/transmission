@@ -459,9 +459,11 @@ TrMainWindow :: createStatusBar( )
         p->setMenu( createOptionsMenu( ) );
         h->addWidget( p );
 
-        p = myAltSpeedButton = new TrIconPushButton( this );
+        p = myAltSpeedButton = new QPushButton( this );
         p->setIcon( myPrefs.get<bool>(Prefs::ALT_SPEED_LIMIT_ENABLED) ? mySpeedModeOnIcon : mySpeedModeOffIcon );
         p->setIconSize( QPixmap( ":/icons/alt-limit-on.png" ).size() );
+        p->setCheckable( true );
+        p->setFixedWidth( p->height() );
         p->setFlat( true );
         h->addWidget( p );
         connect( p, SIGNAL(clicked()), this, SLOT(toggleSpeedMode()));
