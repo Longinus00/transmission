@@ -304,8 +304,9 @@ MyApp :: maybeUpdateBlocklist( )
 void
 MyApp :: onSessionSourceChanged( )
 {
-    myLastFullUpdateTime = 0;
-    refreshTorrents();
+    mySession->initTorrents( );
+    mySession->refreshSessionStats( );
+    mySession->refreshSessionInfo( );
 }
 
 void
