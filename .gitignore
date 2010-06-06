@@ -1,10 +1,15 @@
 
 .deps
 .libs
+.pc
 
 *.a
 *.o
 *.lo
+
+build-stamp
+config-stamp
+configure-stamp
 
 config.*
 configure
@@ -22,6 +27,38 @@ cli/transmissioncli
 
 daemon/transmission-daemon
 daemon/transmission-remote
+
+debian/files
+debian/stamp-patched
+debian/tmp/
+debian/transmission-cli.debhelper.log
+debian/transmission-cli.substvars
+debian/transmission-cli/
+debian/transmission-common.debhelper.log
+debian/transmission-common.substvars
+debian/transmission-common/
+debian/transmission-daemon.debhelper.log
+debian/transmission-daemon.postinst.debhelper
+debian/transmission-daemon.postrm.debhelper
+debian/transmission-daemon.prerm.debhelper
+debian/transmission-daemon.substvars
+debian/transmission-daemon/
+debian/transmission-dbg.debhelper.log
+debian/transmission-dbg.substvars
+debian/transmission-dbg/
+debian/transmission-gtk.debhelper.log
+debian/transmission-gtk.postinst.debhelper
+debian/transmission-gtk.postrm.debhelper
+debian/transmission-gtk.substvars
+debian/transmission-gtk/
+debian/transmission-qt.debhelper.log
+debian/transmission-qt.postinst.debhelper
+debian/transmission-qt.postrm.debhelper
+debian/transmission-qt.substvars
+debian/transmission-qt/
+debian/transmission.debhelper.log
+debian/transmission.substvars
+debian/transmission/
 
 depcomp
 libtool
@@ -92,29 +129,11 @@ m4/ltsugar.m4
 m4/ltversion.m4
 m4/lt~obsolete.m4
 
+po/.intltool-merge-cache
 po/Makefile.in.in
 po/POTFILES
 po/stamp-it
+po/transmission.pot
 po/*.gmo
 
-third-party/libevent/aclocal.m4
-third-party/libevent/autom4te.cache/
-third-party/libevent/event-config.h
-third-party/libevent/libevent.la
-third-party/libevent/libevent_core.la
-third-party/libevent/libevent_extra.la
-third-party/libevent/libtool
-third-party/libevent/ltmain.sh
-third-party/libevent/sample/event-test
-third-party/libevent/sample/signal-test
-third-party/libevent/sample/time-test
-third-party/libevent/stamp-h1
-third-party/libevent/test/bench
-third-party/libevent/test/regress
-third-party/libevent/test/regress.gen.c
-third-party/libevent/test/regress.gen.h
-third-party/libevent/test/test-eof
-third-party/libevent/test/test-init
-third-party/libevent/test/test-time
-third-party/libevent/test/test-weof
-
+third-party/miniupnp/miniupnpcstrings.h
