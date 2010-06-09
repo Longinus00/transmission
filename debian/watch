@@ -1,4 +1,0 @@
-version=3
-
-opts="uversionmangle=s/(b[0-9]+)$/~\\1/" \
-http://download.m0k.org/transmission/files/transmission-(.*)\.tar\.bz2 debian uupdate
