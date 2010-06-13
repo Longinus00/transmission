@@ -76,6 +76,7 @@ Transmission.prototype =
 
 		this._torrent_list             = $('#torrent_list')[0];
 		this._inspector_file_list      = $('#inspector_file_list')[0];
+		this._inspector_peers_list     = $('#inspector_peers_list')[0];
 		this._inspector_trackers_list  = $('#inspector_trackers_list')[0];
 		this._inspector_tab_files      = $('#inspector_tab_files')[0];
 		this._toolbar_buttons          = $('#torrent_global_menu ul li');
@@ -700,6 +701,7 @@ Transmission.prototype =
 		this.hideiPhoneAddressbar();
 	
 		this.updateVisibleFileLists();
+		this.updatePeersLists();
 		this.updateTrackersLists();
 	},
 
@@ -1186,6 +1188,7 @@ Transmission.prototype =
 			setInnerHTML( tab.download_dir, na );
 			setInnerHTML( tab.error, na );
 			this.updateVisibleFileLists();
+			this.updatePeersLists();
 			this.updateTrackersLists();
 			$("#torrent_inspector_size, .inspector_row > div:contains('N/A')").css('color', '#666');
 			return;
@@ -1262,7 +1265,8 @@ Transmission.prototype =
 		setInnerHTML( tab.creator, creator );
 		setInnerHTML( tab.download_dir, download_dir == na ? download_dir : download_dir.replace(/([\/_\.])/g, "$1&#8203;") );
 		setInnerHTML( tab.error, error );
-		
+
+		this.updatePeersLists();
 		this.updateTrackersLists();
 		$(".inspector_row > div:contains('N/A')").css('color', '#666');
 		this.updateVisibleFileLists();
@@ -1286,6 +1290,38 @@ Transmission.prototype =
 					$("#select_all_button_container").show();
 			}
 		}
+	},
+
+	updatePeersLists: function() {
+		var tr = this;
+		var html = '';
+		var torrents = this.getSelectedTorrents( );
+		if( $(this._inspector_peers_list).is(':visible') && torrents.length == 1 ) {
+			html += '<div class="inspector_group"><table class="peer_list">';
+			html += '<tr class="inspector_peer_entry even">';
+			html += '<th></th>';
+			html += '<th>Up</th>';
+			html += '<th>Down</th>';
+			html += '<th>%</th>';
+			html += '<th>Status</th>';
+			html += '<th>Address</th>';
+			html += '<th>Client</th>';
+			html += '</tr>';
+			for( var i=0, peer; peer=torrents[0]._peers[i]; ++i ) {
+				var parity = ((i+1) % 2 == 0 ? 'even' : 'odd');
+				html += '<tr class="inspector_peer_entry ' + parity + '">';
+				html += '<td>' + (peer.isEncrypted ? '<img src="images/graphics/lock_icon.png" alt="Encrypted"/>' : '') + '</td>';
+				html += '<td>' + (peer.rateToPeer ? Math.formatBytes(peer.rateToPeer) + '/s' : '') + '</td>';
+				html += '<td>' + (peer.rateToClient ? Math.formatBytes(peer.rateToClient) + '/s' : '') + '</td>';
+				html += '<td>' + Math.floor(peer.progress*100) + '%' + '</td>';
+				html += '<td>' + peer.flagStr + '</td>';
+				html += '<td>' + peer.address + '</td>';
+				html += '<td>' + peer.clientName + '</td>';
+				html += '</tr>';
+			}
+			html += '</table></div>';
+		}
+		setInnerHTML(this._inspector_peers_list, html);
 	},
 
 	updateTrackersLists: function() {
