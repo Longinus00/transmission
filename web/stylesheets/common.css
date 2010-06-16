@@ -525,7 +525,7 @@ div#torrent_inspector {
 	top: 97px;
 	bottom: 22px;
 	right: 0px;
-	width: 450px;
+	width: 500px;
 	background-color: #ddd;
 	border-left: 1px solid #888;
 	z-index: 2;
@@ -585,12 +585,12 @@ div#inspector_tabs {
 }
 .inspector_row > .inspector_label {
 	display: table-cell;
-	width: 100px; /* this + the next 330 == inspector_container_with */
+	width: 100px; /* this + the next 380 == inspector_container_with */
 }
 .inspector_row > div {
 	display: table-cell;
 	padding-top: 10px;
-	width: 330px; /* inspector_container_width==430 - inspector_label_width==100 */
+	width: 380px; /* inspector_container_width==480 - inspector_label_width==100 */
 }
 
 /* Peers Inspector Tab */
@@ -615,8 +615,42 @@ table.peer_list {
 	clear: both;
 }
 
-tr.inspector_peer_entry {
+.peer_list .encryptedCol {
+	width: 16px;
+}
+
+.peer_list .upCol {
+	width: 70px;
+}
+
+.peer_list .downCol {
+	width: 70px;
+}
+
+.peer_list .percentCol {
+	width: 30px;
+	padding-right: 5px;
+}
+
+.peer_list td.percentCol {
+	text-align: right;
+}
+
+.peer_list .statusCol {
+	width: 40px;
+	padding-right: 5px;
+}
+
+.peer_list .addressCol {
+	width: 90px;
+}
+
+.peer_list .clientCol {
 	text-overflow: ellipsis;
+}
+
+tr.inspector_peer_entry {
+
 }
 
 tr.inspector_peer_entry.odd {
@@ -655,7 +689,7 @@ ul.tier_list {
 .tier_list .tracker_activity{
 	float: left;
 	color: #666;
-	width: 300px;
+	width: 350px;
 	display: table;
 	margin-top: 1px;
 }

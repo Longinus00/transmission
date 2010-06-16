@@ -1299,13 +1299,13 @@ Transmission.prototype =
 		if( $(this._inspector_peers_list).is(':visible') && torrents.length == 1 ) {
 			html += '<div class="inspector_group"><table class="peer_list">';
 			html += '<tr class="inspector_peer_entry even">';
-			html += '<th></th>';
-			html += '<th>Up</th>';
-			html += '<th>Down</th>';
-			html += '<th>%</th>';
-			html += '<th>Status</th>';
-			html += '<th>Address</th>';
-			html += '<th>Client</th>';
+			html += '<th class="encryptedCol"></th>';
+			html += '<th class="upCol">Up</th>';
+			html += '<th class="downCol">Down</th>';
+			html += '<th class="percentCol">%</th>';
+			html += '<th class="statusCol">Status</th>';
+			html += '<th class="addressCol">Address</th>';
+			html += '<th class="clientCol">Client</th>';
 			html += '</tr>';
 			for( var i=0, peer; peer=torrents[0]._peers[i]; ++i ) {
 				var parity = ((i+1) % 2 == 0 ? 'even' : 'odd');
@@ -1313,7 +1313,7 @@ Transmission.prototype =
 				html += '<td>' + (peer.isEncrypted ? '<img src="images/graphics/lock_icon.png" alt="Encrypted"/>' : '') + '</td>';
 				html += '<td>' + (peer.rateToPeer ? Math.formatBytes(peer.rateToPeer) + '/s' : '') + '</td>';
 				html += '<td>' + (peer.rateToClient ? Math.formatBytes(peer.rateToClient) + '/s' : '') + '</td>';
-				html += '<td>' + Math.floor(peer.progress*100) + '%' + '</td>';
+				html += '<td class="percentCol">' + Math.floor(peer.progress*100) + '%' + '</td>';
 				html += '<td>' + peer.flagStr + '</td>';
 				html += '<td>' + peer.address + '</td>';
 				html += '<td>' + peer.clientName + '</td>';
