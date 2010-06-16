@@ -1,3 +1,0 @@
-usr/bin/qtr
-debian/transmission-qt.desktop usr/share/applications/
-debian/lintian/transmission-qt usr/share/lintian/overrides

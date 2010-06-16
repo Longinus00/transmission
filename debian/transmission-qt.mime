@@ -1,1 +1,0 @@
-application/x-bittorrent; qtr %s; description="Qt-based BitTorrent client"; test=test -n "$DISPLAY"
