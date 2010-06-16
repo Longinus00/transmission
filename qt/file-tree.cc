@@ -561,8 +561,8 @@ FileTreeDelegate :: paint( QPainter                    * painter,
         p.maximum = 100;
         p.textAlignment = Qt::AlignCenter;
         p.textVisible = true;
-        p.progress = index.model()->data(index).toDouble() * 100.0;
-        p.text = tr( "%1%" ).arg( Utils::truncateDoubleToString( p.progress, 0 ) );
+        p.progress = (int)(100.0*index.model()->data(index).toDouble());
+        p.text = QString( ).sprintf( "%d%%", p.progress );
         style->drawControl( QStyle::CE_ProgressBar, &p, painter );
     }
     else if( column == COL_WANTED )

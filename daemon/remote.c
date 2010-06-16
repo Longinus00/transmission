@@ -1301,7 +1301,7 @@ printTorrentList( tr_benc * top )
                 char errorMark;
 
                 if( sizeWhenDone )
-                    strtruncd( doneStr, 100.0 * ( sizeWhenDone - leftUntilDone ) / sizeWhenDone, 0, sizeof( doneStr ) );
+                    tr_snprintf( doneStr, sizeof( doneStr ), "%d%%", (int)( 100.0 * ( sizeWhenDone - leftUntilDone ) / sizeWhenDone ) );
                 else
                     tr_strlcpy( doneStr, "n/a", sizeof( doneStr ) );
 
@@ -1316,7 +1316,7 @@ printTorrentList( tr_benc * top )
                 else
                     errorMark = ' ';
                 printf(
-                    "%4d%c %4s%%  %9s  %-8s  %6.1f  %6.1f  %5s  %-11s  %s\n",
+                    "%4d%c  %4s  %9s  %-8s  %6.1f  %6.1f  %5s  %-11s  %s\n",
                     (int)id, errorMark,
                     doneStr,
                     haveStr,

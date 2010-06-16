@@ -861,8 +861,7 @@ Details :: refresh( )
 
             item->setText( COL_UP, peer.rateToPeer.isZero() ? "" : Utils::speedToString( peer.rateToPeer ) );
             item->setText( COL_DOWN, peer.rateToClient.isZero() ? "" : Utils::speedToString( peer.rateToClient ) );
-            item->setText( COL_PERCENT,
-                peer.progress > 0 ? tr( "%1%" ).arg( Utils::truncateDoubleToString( peer.progress * 100.0, 0 ) ) : "" );
+            item->setText( COL_PERCENT, peer.progress > 0 ? QString( "%1%" ).arg( (int)( peer.progress * 100.0 ) ) : "" );
             item->setText( COL_STATUS, code );
             item->setToolTip( COL_STATUS, codeTip );
 
