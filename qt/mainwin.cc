@@ -709,7 +709,7 @@ TrMainWindow :: refreshTitle( )
     QString title( "Transmission" );
     const QUrl url( mySession.getRemoteUrl( ) );
     if( !url.isEmpty() )
-        title += tr( " - %1" ).arg( url.toString(QUrl::RemoveUserInfo) );
+        title += tr( " - %1:%2" ).arg( url.host() ).arg( url.port() );
     setWindowTitle( title );
 }
 
@@ -1264,7 +1264,10 @@ TrMainWindow :: removeTorrents( const bool deleteFiles )
     layout->addItem( spacer, layout->rowCount(), 0, 1, layout->columnCount() );
 
     if( msgBox->exec() == QMessageBox::Ok )
+    {
+        ui.listView->selectionModel()->clear();
         mySession.removeTorrents( ids, deleteFiles );
+    }
 }
 
 /***
