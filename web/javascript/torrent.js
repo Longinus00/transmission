@@ -491,7 +491,7 @@ Torrent.prototype =
 			case Torrent._StatusChecking:
 				// 'Verifying local data (40% tested)'
 				c = 'Verifying local data (';
-				c += Math.roundWithPrecision( 100.0 * this._recheckProgress, 0 );
+				c += ( 100.0 * this._recheckProgress ).toPercentString();
 				c += '% tested)';
 				break;
 		}
@@ -954,7 +954,7 @@ TorrentFile.prototype = {
 		c += ' of ';
 		c += Transmission.fmt.size(this._size);
 		c += ' (';
-		c += this._size ? Math.ratio(100 * this._done, this._size).toPercentString() : '100';
+		c += this._size ? (100 * this._done / this._size).toPercentString() : '100';
 		c += '%)';
 		setInnerHTML(this._progress[0], c);
 	},
