@@ -598,8 +598,22 @@ Torrent.prototype =
 			}
 
 			// Create the 'progress details' label
-			// Eg: '698.05 MiB, uploaded 8.59 GiB (Ratio: 12.3)'
-			c = Transmission.fmt.size( this._size );
+			// Partial seed
+			if( this._size != this._sizeWhenDone ) {
+				// Eg: '127.21 MiB of 698.05 MiB (18.2%)'
+				c = Transmission.fmt.size( this._sizeWhenDone );
+				c += ' of ';
+				c += Transmission.fmt.size( this._size );
+				c += ' (';
+				c += ( 100.0 * this._sizeWhenDone / this._size ).toPercentString();
+				c += '%)';
+			}
+			// Regular seed
+			else {
+				// Eg: '698.05 MiB'
+				c = Transmission.fmt.size( this._size );
+			}
+			// Eg:', uploaded 8.59 GiB (Ratio: 12.3)'
 			c += ', uploaded ';
 			c += Transmission.fmt.size( this._upload_total );
 			c += ' (Ratio ';
