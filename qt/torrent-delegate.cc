@@ -74,7 +74,7 @@ TorrentDelegate :: progressString( const Torrent& tor ) const
     {
         /* %1 is the percentage of torrent metadata downloaded */
         str = tr( "Magnetized transfer - retrieving metadata (%1%)" )
-            .arg( tor.metadataPercentDone() * 100.0, 0, 'f', 2 );
+            .arg( Utils::percentToString( tor.metadataPercentDone() * 100.0 ) );
     }
     else if( !isDone ) // downloading
     {
@@ -231,7 +231,7 @@ TorrentDelegate :: statusString( const Torrent& tor ) const
                         .arg( tor.peersWeAreDownloadingFrom( ) );
             else
                 str = tr( "Downloading metadata from %n peer(s) (%1% done)", 0, tor.peersWeAreDownloadingFrom( ) )
-                        .arg( int(100.0 * tor.metadataPercentDone( ) ) );
+                        .arg( Utils::percentToString( 100.0 * tor.metadataPercentDone( ) ) );
             break;
 
         case TR_STATUS_SEED:
