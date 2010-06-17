@@ -99,3 +99,7 @@ po/*.gmo
 po/.intltool-merge-cache
 
 third-party/miniupnp/miniupnpcstrings.h
+
+utils/transmission-create
+utils/transmission-edit
+utils/transmission-show
