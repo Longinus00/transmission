@@ -39,8 +39,8 @@ Torrent._MetaDataFields = [ 'addedDate', 'comment', 'creator', 'dateCreated',
 		'isPrivate', 'name', 'totalSize', 'pieceCount', 'pieceSize' ]
 
 Torrent._DynamicFields = [ 'downloadedEver', 'error', 'errorString', 'eta',
-    'haveUnchecked', 'haveValid', 'leftUntilDone', 'metadataPercentComplete', 'peersConnected',
-    'peersGettingFromUs', 'peersSendingToUs', 'rateDownload', 'rateUpload',
+    'haveUnchecked', 'haveValid', 'leftUntilDone', 'metadataPercentComplete', 'peers',
+    'peersConnected', 'peersGettingFromUs', 'peersSendingToUs', 'rateDownload', 'rateUpload',
     'recheckProgress', 'sizeWhenDone', 'status', 'trackerStats', 'desiredAvailable',
     'uploadedEver', 'uploadRatio', 'seedRatioLimit', 'seedRatioMode', 'downloadDir', 'isFinished' ]
 
@@ -221,6 +221,9 @@ Torrent.prototype =
 	downloadTotal: function() { return this._download_total; },
 	hash: function() { return this._hashString; },
 	id: function() { return this._id; },
+	isActiveFilter: function() { return this.peersGettingFromUs() > 0
+					|| this.peersSendingToUs() > 0
+					|| this.state() == Torrent._StatusChecking; },
 	isActive: function() { return this.state() != Torrent._StatusPaused; },
 	isDownloading: function() { return this.state() == Torrent._StatusDownloading; },
 	isSeeding: function() { return this.state() == Torrent._StatusSeeding; },
@@ -380,6 +383,7 @@ Torrent.prototype =
 		this._seed_ratio_mode         = data.seedRatioMode;
 		this._download_speed          = data.rateDownload;
 		this._upload_speed            = data.rateUpload;
+		this._peers                   = data.peers;
 		this._peers_connected         = data.peersConnected;
 		this._peers_getting_from_us   = data.peersGettingFromUs;
 		this._peers_sending_to_us     = data.peersSendingToUs;
@@ -669,6 +673,9 @@ Torrent.prototype =
 		
 		switch( filter )
 		{
+			case Prefs._FilterActive:
+				pass = this.isActiveFilter();
+				break;
 			case Prefs._FilterSeeding:
 				pass = this.isSeeding();
 				break;

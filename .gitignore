@@ -96,5 +96,6 @@ po/Makefile.in.in
 po/POTFILES
 po/stamp-it
 po/*.gmo
+po/.intltool-merge-cache
 
 third-party/miniupnp/miniupnpcstrings.h
