@@ -96,25 +96,6 @@ po/Makefile.in.in
 po/POTFILES
 po/stamp-it
 po/*.gmo
+po/.intltool-merge-cache
 
-third-party/libevent/aclocal.m4
-third-party/libevent/autom4te.cache/
-third-party/libevent/event-config.h
-third-party/libevent/libevent.la
-third-party/libevent/libevent_core.la
-third-party/libevent/libevent_extra.la
-third-party/libevent/libtool
-third-party/libevent/ltmain.sh
-third-party/libevent/sample/event-test
-third-party/libevent/sample/signal-test
-third-party/libevent/sample/time-test
-third-party/libevent/stamp-h1
-third-party/libevent/test/bench
-third-party/libevent/test/regress
-third-party/libevent/test/regress.gen.c
-third-party/libevent/test/regress.gen.h
-third-party/libevent/test/test-eof
-third-party/libevent/test/test-init
-third-party/libevent/test/test-time
-third-party/libevent/test/test-weof
-
+third-party/miniupnp/miniupnpcstrings.h

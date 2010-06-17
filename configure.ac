@@ -3,8 +3,8 @@ dnl STATUS: "X" for prerelease beta builds,
 dnl         "Z" for unsupported trunk builds,
 dnl         "0" for stable, supported releases
 dnl these should be the only two lines you need to change
-m4_define([user_agent_prefix],[1.93+])
-m4_define([peer_id_prefix],[-TR193Z-])
+m4_define([user_agent_prefix],[2.00+])
+m4_define([peer_id_prefix],[-TR200Z-])
 
 AC_INIT([transmission],
         [user_agent_prefix],
@@ -23,10 +23,6 @@ AC_PROG_LIBTOOL
 
 if test m4_substr(peer_id_prefix,6,1) = "0"; then
   supported_build=yes
-  if test "x$GCC" = "xyes" ; then
-    CFLAGS="$CFLAGS -g -O3 "
-    CXXFLAGS="$CXXFLAGS -g -O3 "
-  fi
   CPPFLAGS="$CPPFLAGS -DNDEBUG"
 else
   supported_build=no
@@ -480,6 +476,7 @@ AC_CONFIG_FILES([Makefile
                  daemon/Makefile
                  doc/Makefile
                  libtransmission/Makefile
+                 utils/Makefile
                  third-party/Makefile
                  third-party/miniupnp/Makefile
                  third-party/libnatpmp/Makefile

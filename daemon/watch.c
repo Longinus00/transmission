@@ -1,11 +1,11 @@
 /*
  * This file Copyright (C) 2009-2010 Mnemosyne LLC
  *
- * This file is licensed by the GPL version 2.  Works owned by the
- * Transmission project are granted a special exemption to clause 2(b)
- * so that the bulk of its code can remain under the MIT license.
- * This exemption does not extend to derived works not owned by
- * the Transmission project.
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2
+ * as published by the Free Software Foundation.
+ *
+ * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
  *
  * $Id$
  */
@@ -40,18 +40,6 @@ struct dtr_watchdir
     struct evbuffer * lastFiles;
 #endif
 };
-
-static tr_bool
-str_has_suffix( const char *str, const char *suffix )
-{
-    const size_t str_len = strlen( str );
-    const size_t suffix_len = strlen( suffix );
-
-    if( str_len < suffix_len )
-        return FALSE;
-
-    return !strncasecmp( str + str_len - suffix_len, suffix, suffix_len );
-}
 
 /***
 ****  INOTIFY IMPLEMENTATION
@@ -97,9 +85,7 @@ watchdir_new_impl( dtr_watchdir * w )
         {
             const char * name = d->d_name;
 
-            if( !name || *name=='.' ) /* skip dotfiles */
-                continue;
-            if( !str_has_suffix( name, ".torrent" ) ) /* skip non-torrents */
+            if( !tr_str_has_suffix( name, ".torrent" ) ) /* skip non-torrents */
                 continue;
 
             tr_inf( "Found new .torrent file \"%s\" in watchdir \"%s\"", name, w->dir );
@@ -149,7 +135,7 @@ watchdir_update_impl( dtr_watchdir * w )
         while (i < len) {
             struct inotify_event * event = (struct inotify_event *) &buf[i];
             const char * name = event->name;
-            if( str_has_suffix( name, ".torrent" ) )
+            if( tr_str_has_suffix( name, ".torrent" ) )
             {
                 tr_inf( "Found new .torrent file \"%s\" in watchdir \"%s\"", name, w->dir );
                 w->callback( w->session, w->dir, name );
@@ -221,7 +207,7 @@ watchdir_update_impl( dtr_watchdir * w )
 
             if( !name || *name=='.' ) /* skip dotfiles */
                 continue;
-            if( !str_has_suffix( name, ".torrent" ) ) /* skip non-torrents */
+            if( !tr_str_has_suffix( name, ".torrent" ) ) /* skip non-torrents */
                 continue;
 
             len = strlen( name );
