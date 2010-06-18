@@ -263,18 +263,6 @@ Math.roundWithPrecision = function(floatnum, precision) {
     return Math.round ( floatnum * Math.pow ( 10, precision ) ) / Math.pow ( 10, precision );
 };
 
-/*
- *   Round a string of a number to a specified number of decimal
- *   places
- *
- *   @param number num
- *   @param integer place
- *   @returns string
- */
-Math.toFixed = function( num, place ){
-    var ret = Math.roundWithPrecision( num, place );
-    return ret.toFixed( place );
-}
 
 /*
  *   Given a numerator and denominator, return a ratio string
