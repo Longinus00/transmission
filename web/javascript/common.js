@@ -133,11 +133,23 @@ Math.ratio = function( numerator, denominator ) {
 };
 
 /*
+ *   Truncate a float to a specified number of decimal
+ *   places, stripping trailing zeroes
+ *
+ *   @param float floatnum
+ *   @param integer precision
+ *   @returns float
+ */
+Math.truncateWithPrecision = function(floatnum, precision) {
+	return Math.round ( floatnum * Math.pow ( 10, precision ) ) / Math.pow ( 10, precision );
+};
+
+/*
  *   Round a string of a number to a specified number of decimal
  *   places
  */
 Number.prototype.toTruncFixed = function( place ) {
-	var ret = Math.roundWithPrecision( this, place );
+	var ret = Math.truncateWithPrecision( this, place );
 	return ret.toFixed( place );
 }
 
