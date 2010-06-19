@@ -126,8 +126,8 @@ Math.ratio = function( numerator, denominator ) {
 	var result = Math.floor(100 * numerator / denominator) / 100;
 
 	// check for special cases
-	if (isNaN(result)) result = 0;
 	if (result==Number.POSITIVE_INFINITY || result==Number.NEGATIVE_INFINITY) result = -2;
+	else if (isNaN(result)) result = -1;
 
 	return result;
 };
@@ -151,30 +151,6 @@ Math.truncateWithPrecision = function(floatnum, precision) {
 Number.prototype.toTruncFixed = function( place ) {
 	var ret = Math.truncateWithPrecision( this, place );
 	return ret.toFixed( place );
-}
-
-/*
- *   Format a percentage to a string
- */
-Number.prototype.toPercentString = function() {
-	if( this < 10.0 )
-		return this.toTruncFixed( 2 );
-	else if( this < 100.0 )
-		return this.toTruncFixed( 1 );
-	else
-		return this.toTruncFixed( 0 );
-}
-
-/*
- *   Format a ratio to a string
- */
-Number.prototype.toRatioString = function() {
-	if( this ==  -1 )
-		return "None";
-	else if( this == -2 )
-		return '&infin;';
-	else
-		return this.toPercentString();
 }
 
 /*
