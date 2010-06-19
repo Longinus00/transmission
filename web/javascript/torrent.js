@@ -88,8 +88,9 @@ Torrent.prototype =
 		top_e.id = 'torrent_' + data.id;
 		top_e._torrent = this;
 		var element = $(top_e);
-                $(element).bind('dblclick', function(e) { transmission.toggleInspector(); });
+		$(element).bind('dblclick', function(e) { transmission.toggleInspector(); });
 		element._torrent = this;
+		element._id = this._id;
 		this._element = element;
 		this._controller = controller;
 		controller._rows.push( element );
@@ -100,26 +101,34 @@ Torrent.prototype =
 		top_e.appendChild( e );
 		element._name_container = e;
 		
-		// Create the 'progress details' <div>
+		// Create the 'peer details' <div>
 		e = document.createElement( 'div' );
-		e.className = 'torrent_progress_details';
+		e.className = 'torrent_peer_details';
 		top_e.appendChild( e );
-		element._progress_details_container = e;
+		element._peer_details_container = e;
+
+		//Create a progress bar container
+		top_a = document.createElement( 'div' );
+		top_a.className = 'torrent_progress_bar_container';
+		element._progress_bar_container = top_a;
 
 		// Create the 'in progress' bar
 		e = document.createElement( 'div' );
 		e.className = 'torrent_progress_bar incomplete';
 		e.style.width = '0%';
-		top_e.appendChild( e );
+		top_a.appendChild( e );
 		element._progress_complete_container = e;
 			
 		// Create the 'incomplete' bar (initially hidden)
 		e = document.createElement( 'div' );
 		e.className = 'torrent_progress_bar incomplete';
 		e.style.display = 'none';
-		top_e.appendChild( e );
+		top_a.appendChild( e );
 		element._progress_incomplete_container = e;
 		
+		//Add the progress bar container to the torrent
+		top_e.appendChild(top_a);
+
 		// Add the pause/resume button - don't specify the
 		// image or alt text until the 'refresh()' function
 		// (depends on torrent state)
@@ -130,12 +139,12 @@ Torrent.prototype =
 		top_e.appendChild( e );
 		element._pause_resume_button_image = image;
 		if (!iPhone) $(e).bind('click', function(e) { element._torrent.clickPauseResumeButton(e); });
-		
-		// Create the 'peer details' <div>
+
+		// Create the 'progress details' <div>
 		e = document.createElement( 'div' );
-		e.className = 'torrent_peer_details';
+		e.className = 'torrent_progress_details';
 		top_e.appendChild( e );
-		element._peer_details_container = e;
+		element._progress_details_container = e;
 		
 		// Set the torrent click observer
 		element.bind('click', function(e){ element._torrent.clickTorrent(e) });
@@ -426,10 +435,18 @@ Torrent.prototype =
 		return null;
 	},
 
+	formatUL: function() {
+		return 'UL: ' + Transmission.fmt.speed(this._upload_speed);
+	},
+	formatDL: function() {
+		return 'DL: ' + Transmission.fmt.speed(this._download_speed);
+	},
+
 	getPeerDetails: function()
 	{
 		var c;
 
+		var compact_mode = this._controller[Prefs._CompactDisplayState];
 		if(( c = this.getErrorMessage( )))
 			return c;
 
@@ -442,27 +459,35 @@ Torrent.prototype =
 				break;
 
 			case Torrent._StatusDownloading:
-				// 'Downloading from 36 of 40 peers - DL: 60.2 KiB/s UL: 4.3 KiB/s'
-				c = 'Downloading from ';
-				c += this.peersSendingToUs();
-				c += ' of ';
-				c += this._peers_connected;
-				c += ' peers - DL: ';
-				c += Math.formatBytes(this._download_speed);
-				c += '/s UL: ';
-				c += Math.formatBytes(this._upload_speed);
-				c += '/s';
+				if(compact_mode){
+					c = this.formatDL();
+					c += ' ';
+					c += this.formatUL();
+				} else {
+					// 'Downloading from 36 of 40 peers - DL: 60.2 KiB/s UL: 4.3 KiB/s'
+					c = 'Downloading from ';
+					c += this.peersSendingToUs();
+					c += ' of ';
+					c += this._peers_connected;
+					c += ' peers - ';
+					c = this.formatDL();
+					c += ' ';
+					c += this.formatUL();
+				}
 				break;
 
 			case Torrent._StatusSeeding:
-				// 'Seeding to 13 of 22 peers - UL: 36.2 KiB/s'
-				c = 'Seeding to ';
-				c += this.peersGettingFromUs();
-				c += ' of ';
-				c += this._peers_connected;
-				c += ' peers - UL: ';
-				c += Math.formatBytes(this._upload_speed);
-				c += '/s';
+				if(compact_mode){
+					c += this.formatUL();
+				} else {
+					// 'Seeding to 13 of 22 peers - UL: 36.2 KiB/s'
+					c = 'Seeding to ';
+					c += this.peersGettingFromUs();
+					c += ' of ';
+					c += this._peers_connected;
+					c += ' peers - ';
+					c += this.formatUL();
+				}
 				break;
 
 			case Torrent._StatusChecking:
@@ -481,6 +506,18 @@ Torrent.prototype =
 		var progress_details;
 		var root = this._element;
 		var MaxBarWidth = 100; // reduce this to make the progress bar shorter (%)
+		var compact_mode = this._controller[Prefs._CompactDisplayState];
+		var compact = '';
+		if(compact_mode){
+			compact = ' compact';
+			root._peer_details_container.style.display = 'none';
+		} else {
+			root._peer_details_container.style.display = 'block';
+		}
+		
+		root._progress_details_container.className = 'torrent_progress_details'+compact
+		root._progress_bar_container.className = 'torrent_progress_bar_container'+compact;
+		root._name_container.className = 'torrent_name'+compact;
 		
 		setInnerHTML( root._name_container, this._name );
 		
@@ -503,9 +540,9 @@ Torrent.prototype =
 				empty = "empty";
 
 			root._progress_complete_container.style.width = metaPercentComplete + "%";
-			root._progress_complete_container.className = 'torrent_progress_bar in_progress meta ' + empty;
+			root._progress_complete_container.className = 'torrent_progress_bar in_progress meta ' + empty+compact;
 			root._progress_incomplete_container.style.width = 100 - metaPercentComplete + "%"
-			root._progress_incomplete_container.className = 'torrent_progress_bar incomplete meta';
+			root._progress_incomplete_container.className = 'torrent_progress_bar incomplete compact meta'+compact;
 			root._progress_incomplete_container.style.display = 'block';
 
 		}
@@ -519,14 +556,14 @@ Torrent.prototype =
 				if (this._eta < 0 || this._eta >= Torrent._InfiniteTimeRemaining )
 					eta += 'remaining time unknown';
 				else
-					eta += Math.formatSeconds(this._eta) + ' remaining';
+					eta += Transmission.fmt.timeInterval(this._eta) + ' remaining';
 			}
 			
 			// Create the 'progress details' label
 			// Eg: '101 MiB of 631 MiB (16.02%) - 2 hr remaining'
-			c = Math.formatBytes( this._sizeWhenDone - this._leftUntilDone );
+			c = Transmission.fmt.size( this._sizeWhenDone - this._leftUntilDone );
 			c += ' of ';
-			c += Math.formatBytes( this._sizeWhenDone );
+			c += Transmission.fmt.size( this._sizeWhenDone );
 			c += ' (';
 			c += this.getPercentDoneStr();
 			c += '%)';
@@ -538,7 +575,7 @@ Torrent.prototype =
 			
 			// Update the 'in progress' bar
 			e = root._progress_complete_container;
-			c = 'torrent_progress_bar';
+			c = 'torrent_progress_bar'+compact;
 			c += this.isActive() ? ' in_progress' : ' incomplete_stopped';
 			if(css_completed_width === 0) { c += ' empty'; }
 			e.className = c;
@@ -560,14 +597,14 @@ Torrent.prototype =
 				if (this._eta < 0 || this._eta >= Torrent._InfiniteTimeRemaining )
 					eta += 'remaining time unknown';
 				else
-					eta += Math.formatSeconds(this._eta) + ' remaining';
+					eta += Transmission.fmt.timeInterval(this._eta) + ' remaining';
 			}
 
 			// Create the 'progress details' label
 			// Eg: '698.05 MiB, uploaded 8.59 GiB (Ratio: 12.3)'
-			c = Math.formatBytes( this._size );
+			c = Transmission.fmt.size( this._size );
 			c += ', uploaded ';
-			c += Math.formatBytes( this._upload_total );
+			c += Transmission.fmt.size( this._upload_total );
 			c += ' (Ratio ';
 			if(this._upload_ratio > -1)
 				c += Math.round(this._upload_ratio*100)/100;
@@ -610,16 +647,18 @@ Torrent.prototype =
 		}
 		
 		// Update the progress details
+		if(compact_mode)
+			progress_details = this.getPeerDetails();
 		setInnerHTML( root._progress_details_container, progress_details );
 		
 		// Update the peer details and pause/resume button
 		e = root._pause_resume_button_image;
 		if ( this.state() === Torrent._StatusPaused ) {
 			e.alt = 'Resume';
-			e.className = "torrent_resume";
+			e.className = "torrent_resume"+compact;
 		} else {
 			e.alt = 'Pause';
-			e.className = "torrent_pause";
+			e.className = "torrent_pause"+compact;
 		}
 		
 		setInnerHTML( root._peer_details_container, this.getPeerDetails( ) );
@@ -919,9 +958,9 @@ TorrentFile.prototype = {
 	},
 	
 	refreshProgressHTML: function() {
-		var c = Math.formatBytes(this._done);
+		var c = Transmission.fmt.size(this._done);
 		c += ' of ';
-		c += Math.formatBytes(this._size);
+		c += Transmission.fmt.size(this._size);
 		c += ' (';
 		c += Math.ratio(100 * this._done, this._size);
 		c += '%)';
