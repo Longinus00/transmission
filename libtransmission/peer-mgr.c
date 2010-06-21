@@ -21,6 +21,7 @@
 #include "bandwidth.h"
 #include "bencode.h"
 #include "blocklist.h"
+#include "cache.h"
 #include "clients.h"
 #include "completion.h"
 #include "crypto.h"
@@ -391,10 +392,7 @@ peerDestructor( Torrent * t, tr_peer * peer )
     peerDeclinedAllRequests( t, peer );
 
     if( peer->msgs != NULL )
-    {
-        tr_peerMsgsUnsubscribe( peer->msgs, peer->msgsTag );
         tr_peerMsgsFree( peer->msgs );
-    }
 
     tr_peerIoClear( peer->io );
     tr_peerIoUnref( peer->io ); /* balanced by the ref in handshakeDoneCB() */
@@ -456,7 +454,7 @@ torrentDestructor( void * vt )
     tr_free( t );
 }
 
-static void peerCallbackFunc( void * vpeer, void * vevent, void * vt );
+static void peerCallbackFunc( tr_peer *, const tr_peer_event *, void * );
 
 static Torrent*
 torrentConstructor( tr_peerMgr * manager,
@@ -1337,11 +1335,9 @@ peerDeclinedAllRequests( Torrent * t, const tr_peer * peer )
 }
 
 static void
-peerCallbackFunc( void * vpeer, void * vevent, void * vt )
+peerCallbackFunc( tr_peer * peer, const tr_peer_event * e, void * vt )
 {
-    tr_peer * peer = vpeer; /* may be NULL if peer is a webseed */
     Torrent * t = vt;
-    const tr_peer_event * e = vevent;
 
     torrentLock( t );
 
@@ -1498,9 +1494,13 @@ peerCallbackFunc( void * vpeer, void * vevent, void * vt )
 
                         for( fileIndex=0; fileIndex<tor->info.fileCount; ++fileIndex ) {
                             const tr_file * file = &tor->info.files[fileIndex];
-                            if( ( file->firstPiece <= p ) && ( p <= file->lastPiece ) )
-                                if( tr_cpFileIsComplete( &tor->completion, fileIndex ) )
+                            if( ( file->firstPiece <= p ) && ( p <= file->lastPiece ) ) {
+                                if( tr_cpFileIsComplete( &tor->completion, fileIndex ) ) {
+fprintf( stderr, "flushing complete file %d (%s)\n", fileIndex, tor->info.files[fileIndex].name );
+                                    tr_cacheFlushFile( tor->session->cache, tor, fileIndex );
                                     tr_torrentFileCompleted( tor, fileIndex );
+                                }
+                            }
                         }
 
                         pieceListRemovePiece( t, p );
@@ -1701,7 +1701,7 @@ myHandshakeDoneCB( tr_handshake  * handshake,
                 peer->io = tr_handshakeStealIO( handshake ); /* this steals its refcount too, which is
                                                                 balanced by our unref in peerDestructor()  */
                 tr_peerIoSetParent( peer->io, t->tor->bandwidth );
-                tr_peerMsgsNew( t->tor, peer, peerCallbackFunc, t, &peer->msgsTag );
+                tr_peerMsgsNew( t->tor, peer, peerCallbackFunc, t );
 
                 success = TRUE;
             }
