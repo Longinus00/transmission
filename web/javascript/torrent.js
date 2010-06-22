@@ -568,7 +568,7 @@ Torrent.prototype =
 			progress_details = c;
 
 			// Figure out the percent completed
-			var css_completed_width = Math.roundWithPrecision( this.getPercentDone() * MaxBarWidth, 2 );
+			var css_completed_width = ( this.getPercentDone() * MaxBarWidth ).toTruncFixed( 2 );
 
 			// Update the 'in progress' bar
 			e = root._progress_complete_container;

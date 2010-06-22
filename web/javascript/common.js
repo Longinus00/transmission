@@ -116,7 +116,7 @@ function setInnerHTML( e, html )
  *   @returns float
  */
 Math.roundWithPrecision = function(floatnum, precision) {
-	return Math.round ( floatnum * Math.pow ( 10, precision ) ) / Math.pow ( 10, precision );
+	return Math.round( floatnum * Math.pow ( 10, precision ) ) / Math.pow( 10, precision );
 };
 
 /*
@@ -126,8 +126,8 @@ Math.ratio = function( numerator, denominator ) {
 	var result = Math.floor(100 * numerator / denominator) / 100;
 
 	// check for special cases
-	if (result==Number.POSITIVE_INFINITY || result==Number.NEGATIVE_INFINITY) result = -2;
-	else if (isNaN(result)) result = -1;
+	if(result==Number.POSITIVE_INFINITY || result==Number.NEGATIVE_INFINITY) result = -2;
+	else if(isNaN(result)) result = -1;
 
 	return result;
 };
@@ -141,7 +141,7 @@ Math.ratio = function( numerator, denominator ) {
  *   @returns float
  */
 Math.truncateWithPrecision = function(floatnum, precision) {
-	return Math.round ( floatnum * Math.pow ( 10, precision ) ) / Math.pow ( 10, precision );
+	return Math.floor( floatnum * Math.pow ( 10, precision ) ) / Math.pow( 10, precision );
 };
 
 /*
