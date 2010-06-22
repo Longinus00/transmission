@@ -64,7 +64,7 @@ qt/moc_triconpushbutton.cpp
 qt/moc_utils.cpp
 qt/moc_watchdir.cpp
 qt/qrc_application.cpp
-qt/qtr
+qt/transmission-qt
 qt/ui_mainwin.h
 
 intltool-extract.in
