@@ -74,7 +74,7 @@ QString
 Utils :: percentToString( double x )
 {
     char buf[128];
-    return QString( tr_strfpercent( buf, x, sizeof(buf) ) );
+    return QString( tr_strpercent( buf, x, sizeof(buf) ) );
 }
 
 QString

@@ -116,7 +116,7 @@ static const double GiB = 1024.0 * 1024.0 * 1024.0;
 static char*
 strlpercent( char * buf, double x, size_t buflen )
 {
-    return tr_strfpercent( buf, x, buflen );
+    return tr_strpercent( buf, x, buflen );
 }
 
 static char*

@@ -495,7 +495,7 @@ int* tr_parseNumberRange( const char * str,
 double tr_truncd( double x, int decimal_places );
 
 /* return a percent formatted string of either x.xx, xx.x or xxx */
-char* tr_strfpercent( char * buf, double x, size_t buflen );
+char* tr_strpercent( char * buf, double x, size_t buflen );
 
 /**
  * @param buf the buffer to write the string to

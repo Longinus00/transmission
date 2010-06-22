@@ -108,7 +108,7 @@ tr_strlratio( char * buf, double ratio, size_t buflen )
 char*
 tr_strlpercent( char * buf, double x, size_t buflen )
 {
-    return tr_strfpercent( buf, x, buflen );
+    return tr_strpercent( buf, x, buflen );
 }
 
 char*
