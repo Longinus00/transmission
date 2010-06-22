@@ -114,24 +114,9 @@ static const double MiB = 1024.0 * 1024.0;
 static const double GiB = 1024.0 * 1024.0 * 1024.0;
 
 static char*
-strtruncd( char * buf, double x, int precision, size_t buflen )
+strlpercent( char * buf, double x, size_t buflen )
 {
-    tr_snprintf( buf, buflen, "%.*f", precision, tr_truncd( x, precision ) );
-
-    return buf;
-}
-
-static char*
-strfpercent( char * buf, double x, size_t buflen )
-{
-    if( x < 10.0 )
-        strtruncd( buf, x, 2, buflen );
-    else if( x < 100.0 )
-        strtruncd( buf, x, 1, buflen );
-    else
-        strtruncd( buf, x, 0, buflen );
-
-    return buf;
+    return tr_strfpercent( buf, x, buflen );
 }
 
 static char*
@@ -806,7 +791,7 @@ printDetails( tr_benc * top )
             if( tr_bencDictFindInt( t, "sizeWhenDone", &i )
               && tr_bencDictFindInt( t, "leftUntilDone", &j ) )
             {
-                strfpercent( buf, 100.0 * ( i - j ) / i, sizeof( buf ) );
+                strlpercent( buf, 100.0 * ( i - j ) / i, sizeof( buf ) );
                 printf( "  Percent Done: %s%%\n", buf );
             }
 
@@ -832,7 +817,7 @@ printDetails( tr_benc * top )
                     && tr_bencDictFindInt( t, "leftUntilDone", &k) )
                 {
                     j += i - k;
-                    strfpercent( buf, 100.0 * j / i, sizeof( buf ) );
+                    strlpercent( buf, 100.0 * j / i, sizeof( buf ) );
                     printf( "  Availability: %s%%\n", buf );
                 }
                 if( tr_bencDictFindInt( t, "totalSize", &j ) )

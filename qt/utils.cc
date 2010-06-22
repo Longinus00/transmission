@@ -18,7 +18,6 @@
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QInputDialog>
-#include <QLocale>
 #include <QObject>
 #include <QSet>
 #include <QStyle>
@@ -72,41 +71,17 @@ Utils :: speedToString( const Speed& speed )
 }
 
 QString
-Utils :: truncateDoubleToString( double x, int precision )
-{
-    QLocale locale;
-
-    return locale.toString( tr_truncd( x, precision ), 'f', precision );
-}
-
-QString
 Utils :: percentToString( double x )
 {
-    QString str;
-
-    if( x < 10.0 )
-        str = truncateDoubleToString( x, 2 );
-    else if( x < 100.0 )
-        str = truncateDoubleToString( x, 1 );
-    else
-        str = truncateDoubleToString( x, 0 );
-
-    return str;
+    char buf[128];
+    return QString( tr_strfpercent( buf, x, sizeof(buf) ) );
 }
 
 QString
 Utils :: ratioToString( double ratio )
 {
-    QString str;
-
-    if( (int)ratio == TR_RATIO_NA )
-        str = tr( "None" );
-    else if( (int)ratio == TR_RATIO_INF )
-        str = trUtf8( "\xE2\x88\x9E" );
-    else
-        str = percentToString( ratio );
-
-    return str;
+    char buf[128];
+    return QString::fromUtf8( tr_strratio( buf, sizeof(buf), ratio, "\xE2\x88\x9E" ) );
 }
 
 QString

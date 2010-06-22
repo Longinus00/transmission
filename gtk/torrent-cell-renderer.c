@@ -63,7 +63,7 @@ getProgressString( const tr_torrent * tor,
             _( "%1$s of %2$s (%3$s%%)" ),
             tr_strlsize( buf1, haveTotal, sizeof( buf1 ) ),
             tr_strlsize( buf2, torStat->sizeWhenDone, sizeof( buf2 ) ),
-            tr_strfpercent( buf3, torStat->percentDone * 100.0, sizeof( buf3 ) ) );
+            tr_strlpercent( buf3, torStat->percentDone * 100.0, sizeof( buf3 ) ) );
     }
     else if( !isSeed ) /* partial seeds */
     {
@@ -79,7 +79,7 @@ getProgressString( const tr_torrent * tor,
                 _( "%1$s of %2$s (%3$s%%), uploaded %4$s (Ratio: %5$s Goal: %6$s)" ),
                 tr_strlsize( buf1, haveTotal, sizeof( buf1 ) ),
                 tr_strlsize( buf2, info->totalSize, sizeof( buf2 ) ),
-                tr_strfpercent( buf3, torStat->percentComplete * 100.0, sizeof( buf3 ) ),
+                tr_strlpercent( buf3, torStat->percentComplete * 100.0, sizeof( buf3 ) ),
                 tr_strlsize( buf4, torStat->uploadedEver, sizeof( buf4 ) ),
                 tr_strlratio( buf5, torStat->ratio, sizeof( buf5 ) ),
                 tr_strlratio( buf6, seedRatio, sizeof( buf6 ) ) );
@@ -95,7 +95,7 @@ getProgressString( const tr_torrent * tor,
                 _( "%1$s of %2$s (%3$s%%), uploaded %4$s (Ratio: %5$s)" ),
                 tr_strlsize( buf1, haveTotal, sizeof( buf1 ) ),
                 tr_strlsize( buf2, info->totalSize, sizeof( buf2 ) ),
-                tr_strfpercent( buf3, torStat->percentComplete * 100.0, sizeof( buf3 ) ),
+                tr_strlpercent( buf3, torStat->percentComplete * 100.0, sizeof( buf3 ) ),
                 tr_strlsize( buf4, torStat->uploadedEver, sizeof( buf4 ) ),
                 tr_strlratio( buf5, torStat->ratio, sizeof( buf5 ) ) );
         }

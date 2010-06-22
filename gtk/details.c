@@ -798,7 +798,7 @@ refreshInfo( struct DetailsImpl * di, tr_torrent ** torrents, int n )
         else {
             char buf2[32], unver[64], total[64];
             const double ratio = 100.0 * ( leftUntilDone ? ( haveValid + haveUnchecked ) / sizeWhenDone : 1 );
-            tr_strfpercent( buf2, ratio, sizeof( buf2 ) );
+            tr_strlpercent( buf2, ratio, sizeof( buf2 ) );
             tr_strlsize( total, haveUnchecked + haveValid, sizeof( total ) );
             tr_strlsize( unver, haveUnchecked,             sizeof( unver ) );
             if( haveUnchecked )
@@ -816,7 +816,7 @@ refreshInfo( struct DetailsImpl * di, tr_torrent ** torrents, int n )
     else {
         char buf2[32];
         const double d = ( 100.0 * available ) / sizeWhenDone;
-        tr_strfpercent( buf2, d, sizeof( buf2 ) );
+        tr_strlpercent( buf2, d, sizeof( buf2 ) );
         g_snprintf( buf, sizeof( buf ), _( "%1$s%%" ), buf2 );
         str = buf;
     }
