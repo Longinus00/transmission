@@ -106,6 +106,12 @@ tr_strlratio( char * buf, double ratio, size_t buflen )
 }
 
 char*
+tr_strlpercent( char * buf, double x, size_t buflen )
+{
+    return tr_strpercent( buf, x, buflen );
+}
+
+char*
 tr_strlsize( char * buf, guint64 bytes, size_t buflen )
 {
     if( !bytes )
@@ -447,7 +453,7 @@ gtr_object_ref_sink( gpointer object )
 int
 gtr_file_trash_or_remove( const char * filename )
 {
-    if( filename && *filename )
+    if( filename && g_file_test( filename, G_FILE_TEST_EXISTS ) )
     {
         gboolean trashed = FALSE;
 #ifdef HAVE_GIO

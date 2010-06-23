@@ -494,6 +494,9 @@ int* tr_parseNumberRange( const char * str,
  */
 double tr_truncd( double x, int decimal_places );
 
+/* return a percent formatted string of either x.xx, xx.x or xxx */
+char* tr_strpercent( char * buf, double x, size_t buflen );
+
 /**
  * @param buf the buffer to write the string to
  * @param buflef buf's size
@@ -501,6 +504,9 @@ double tr_truncd( double x, int decimal_places );
  * @param the string represntation of "infinity"
  */
 char* tr_strratio( char * buf, size_t buflen, double ratio, const char * infinity ) TR_GNUC_NONNULL(1,4);
+
+/* return a truncated double as a string */
+char* tr_strtruncd( char * buf, double x, int precision, size_t buflen );
 
 /** @brief Portability wrapper for localtime_r() that uses the system implementation if available */
 struct tm * tr_localtime_r( const time_t *_clock, struct tm *_result );
@@ -568,6 +574,12 @@ char* tr_formatter_size( char * buf, uint64_t bytes, size_t buflen );
 
 /* format a speed into a user-readable string. */
 char* tr_formatter_speed( char * buf, uint64_t bytes_per_second, size_t buflen );
+
+enum { TR_FMT_B, TR_FMT_KB, TR_FMT_MB, TR_FMT_GB };
+/* return the human-readable unit initialized by tr_formatter_size_init() */
+const char* tr_formatter_size_units( int size );
+/* return the human-readable unit initialized by tr_formatter_speed_init() */
+const char* tr_formatter_speed_units( int size );
 
 /***
 ****
