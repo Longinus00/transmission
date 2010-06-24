@@ -1365,6 +1365,14 @@ tr_truncd( double x, int decimal_places )
 }
 
 char*
+tr_strtruncd( char * buf, double x, int precision, size_t buflen )
+{
+    tr_snprintf( buf, buflen, "%.*f", precision, tr_truncd( x, precision ) );
+
+    return buf;
+}
+
+char*
 tr_strpercent( char * buf, double x, size_t buflen )
 {
     if( x < 10.0 )
@@ -1385,14 +1393,6 @@ tr_strratio( char * buf, size_t buflen, double ratio, const char * infinity )
         tr_strlcpy( buf, infinity, buflen );
     else
         tr_strpercent( buf, ratio, buflen );
-    return buf;
-}
-
-char*
-tr_strtruncd( char * buf, double x, int precision, size_t buflen )
-{
-    tr_snprintf( buf, buflen, "%.*f", precision, tr_truncd( x, precision ) );
-
     return buf;
 }
 
@@ -1525,15 +1525,15 @@ tr_realpath( const char * path, char * resolved_path )
 ****
 ***/
 
+struct formatter_unit
+{
+    char * name;
+    double value;
+};
+  
 struct formatter_units
 {
-    double KB_val;
-    double MB_val;
-    double GB_val;
-    const char * B_str;
-    const char * KB_str;
-    const char * MB_str;
-    const char * GB_str;
+    struct formatter_unit units[4];
 };
 
 static void
@@ -1542,14 +1542,26 @@ formatter_init( struct formatter_units * units,
                 const char * b, const char * kb,
                 const char * mb, const char * gb )
 {
-    units->B_str  = tr_strdup( b );
-    units->KB_str = tr_strdup( kb );
-    units->MB_str = tr_strdup( mb );
-    units->GB_str = tr_strdup( gb );
+    units->units[TR_FMT_B].name = tr_strdup( b );
+    units->units[TR_FMT_B].value = 1;
 
-    units->KB_val = kilo;
-    units->MB_val = kilo * kilo;
-    units->GB_val = kilo * kilo * kilo;
+    units->units[TR_FMT_KB].name = tr_strdup( kb );
+    units->units[TR_FMT_KB].value = kilo;
+
+    units->units[TR_FMT_MB].name = tr_strdup( mb );
+    units->units[TR_FMT_MB].value = pow( kilo, 2 );
+
+    units->units[TR_FMT_GB].name = tr_strdup( gb );
+    units->units[TR_FMT_GB].value = pow( kilo, 3 );
+}
+
+static const char*
+tr_formatter_units( const struct formatter_units * u, int size )
+{
+    assert( u != NULL );
+    assert( 0<=size && size<4 );
+
+    return u->units[size].name;
 }
 
 static char*
@@ -1557,20 +1569,28 @@ formatter_get_size_str( const struct formatter_units * u,
                         char * buf, uint64_t bytes, size_t buflen )
 {
     int precision;
-    double val;
+    double value;
     const char * units;
+    const struct formatter_unit * unit;
 
-         if( bytes < u->KB_val ) { val = bytes;             units = u->B_str; }
-    else if( bytes < u->MB_val ) { val = bytes / u->KB_val; units = u->KB_str; }
-    else if( bytes < u->GB_val ) { val = bytes / u->MB_val; units = u->MB_str; }
-    else                         { val = bytes / u->GB_val; units = u->GB_str; }
+         if( bytes < u->units[1].value ) unit = &u->units[0];
+    else if( bytes < u->units[2].value ) unit = &u->units[1];
+    else if( bytes < u->units[3].value ) unit = &u->units[2];
+    else                                 unit = &u->units[3];
 
-    precision = val < 100 ? 2 : 1;
-    tr_snprintf( buf, buflen, "%.*f %s", precision, val, units );
+    value = bytes / unit->value;
+    units = unit->name;
+    if( unit->value == 1 )
+        precision = 0;
+    else if( value < 100 )
+        precision = 2;
+    else
+        precision = 1;
+    tr_snprintf( buf, buflen, "%.*f %s", precision, value, units );
     return buf;
 }
 
-static struct formatter_units size_units = { 0, 0, 0, NULL, NULL, NULL, NULL };
+static struct formatter_units size_units;
 
 void
 tr_formatter_size_init( double kilo, const char * b, const char * kb,
@@ -1585,7 +1605,13 @@ tr_formatter_size( char * buf, uint64_t bytes, size_t buflen )
     return formatter_get_size_str( &size_units, buf, bytes, buflen );
 }
 
-static struct formatter_units speed_units = { 0, 0, 0, NULL, NULL, NULL, NULL };
+const char*
+tr_formatter_size_units( int i )
+{
+    return tr_formatter_units( &size_units, i );
+}
+
+static struct formatter_units speed_units;
 
 void
 tr_formatter_speed_init( double kilo, const char * b, const char * kb,
@@ -1598,4 +1624,10 @@ char*
 tr_formatter_speed( char * buf, uint64_t bytes_per_second, size_t buflen )
 {
     return formatter_get_size_str( &speed_units, buf, bytes_per_second, buflen );
+}
+
+const char*
+tr_formatter_speed_units( int i )
+{
+    return tr_formatter_units( &speed_units, i );
 }
