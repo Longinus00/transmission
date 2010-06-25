@@ -114,6 +114,12 @@ static const double MiB = 1024.0 * 1024.0;
 static const double GiB = 1024.0 * 1024.0 * 1024.0;
 
 static char*
+strlpercent( char * buf, double x, size_t buflen )
+{
+    return tr_strpercent( buf, x, buflen );
+}
+
+static char*
 strlratio2( char * buf, double ratio, size_t buflen )
 {
     return tr_strratio( buf, buflen, ratio, "Inf" );
@@ -135,31 +141,24 @@ strlratio( char * buf, double numerator, double denominator, size_t buflen )
 }
 
 static char*
-strlsize( char *  buf, int64_t size, size_t  buflen )
+strlsize( char * buf, int64_t bytes, size_t buflen )
 {
-    if( !size )
-        tr_strlcpy( buf, "None", buflen );
-    else if( size < (int64_t)KiB )
-        tr_snprintf( buf, buflen, "%'" PRId64 " bytes", (int64_t)size );
+    if( !bytes )
+        tr_strlcpy( buf, _( "None" ), buflen );
     else
-    {
-        double displayed_size;
-        if( size < (int64_t)MiB )
-        {
-            displayed_size = (double) size / KiB;
-            tr_snprintf( buf, buflen, "%'.1f KiB", displayed_size );
-        }
-        else if( size < (int64_t)GiB )
-        {
-            displayed_size = (double) size / MiB;
-            tr_snprintf( buf, buflen, "%'.1f MiB", displayed_size );
-        }
-        else
-        {
-            displayed_size = (double) size / GiB;
-            tr_snprintf( buf, buflen, "%'.1f GiB", displayed_size );
-        }
-    }
+        tr_formatter_size( buf, bytes, buflen );
+
+    return buf;
+}
+
+static char*
+strlspeed( char * buf, int64_t bytes_per_second, size_t buflen )
+{
+    if( !bytes_per_second )
+        tr_strlcpy( buf, _( "None" ), buflen );
+    else
+        tr_formatter_speed( buf, bytes_per_second, buflen );
+
     return buf;
 }
 
@@ -207,6 +206,7 @@ static tr_option opts[] =
     { 'b', "debug",                  "Print debugging information", "b",  0, NULL },
     { 'd', "downlimit",              "Set the max download speed in KiB/s for the current torrent(s) or globally", "d", 1, "<speed>" },
     { 'D', "no-downlimit",           "Disable max download speed for the current torrent(s) or globally", "D", 0, NULL },
+    { 'e', "cache",                  "Set the maximum size of the session's memory cache (in MiB)", "e", 1, "<size>" },
     { 910, "encryption-required",    "Encrypt all peer connections", "er", 0, NULL },
     { 911, "encryption-preferred",   "Prefer encrypted peer connections", "ep", 0, NULL },
     { 912, "encryption-tolerated",   "Prefer unencrypted peer connections", "et", 0, NULL },
@@ -322,6 +322,7 @@ getOptMode( int val )
 
         case 'c': /* incomplete-dir */
         case 'C': /* no-incomplete-dir */
+        case 'e': /* cache */
         case 'm': /* portmap */
         case 'M': /* "no-portmap */
         case 'o': /* dht */
@@ -790,16 +791,16 @@ printDetails( tr_benc * top )
             if( tr_bencDictFindInt( t, "sizeWhenDone", &i )
               && tr_bencDictFindInt( t, "leftUntilDone", &j ) )
             {
-                strlratio( buf, 100.0 * ( i - j ), i, sizeof( buf ) );
+                strlpercent( buf, 100.0 * ( i - j ) / i, sizeof( buf ) );
                 printf( "  Percent Done: %s%%\n", buf );
             }
 
             if( tr_bencDictFindInt( t, "eta", &i ) )
                 printf( "  ETA: %s\n", tr_strltime( buf, i, sizeof( buf ) ) );
             if( tr_bencDictFindInt( t, "rateDownload", &i ) )
-                printf( "  Download Speed: %.1f KiB/s\n", i / 1024.0 );
+                printf( "  Download Speed: %s\n", strlspeed( buf, i, sizeof( buf ) ) );
             if( tr_bencDictFindInt( t, "rateUpload", &i ) )
-                printf( "  Upload Speed: %.1f KiB/s\n", i / 1024.0 );
+                printf( "  Upload Speed: %s\n", strlspeed( buf, i, sizeof( buf ) ) );
             if( tr_bencDictFindInt( t, "haveUnchecked", &i )
               && tr_bencDictFindInt( t, "haveValid", &j ) )
             {
@@ -816,7 +817,8 @@ printDetails( tr_benc * top )
                     && tr_bencDictFindInt( t, "leftUntilDone", &k) )
                 {
                     j += i - k;
-                    printf( "  Availability: %.1f%%\n", ( 100 * j ) / (double) i );
+                    strlpercent( buf, 100.0 * j / i, sizeof( buf ) );
+                    printf( "  Availability: %s%%\n", buf );
                 }
                 if( tr_bencDictFindInt( t, "totalSize", &j ) )
                 {
@@ -1071,7 +1073,7 @@ printDetails( tr_benc * top )
             {
                 printf( "  Download Limit: " );
                 if( boolVal )
-                    printf( "%" PRId64 " KiB/s\n", i );
+                    printf( "%s\n", strlspeed( buf, i*1024, sizeof( buf ) ) );
                 else
                     printf( "Unlimited\n" );
             }
@@ -1080,7 +1082,7 @@ printDetails( tr_benc * top )
             {
                 printf( "  Upload Limit: " );
                 if( boolVal )
-                    printf( "%" PRId64 " KiB/s\n", i );
+                    printf( "%s\n", strlspeed( buf, i*1024, sizeof( buf ) ) );
                 else
                     printf( "Unlimited\n" );
             }
@@ -1329,9 +1331,11 @@ printSession( tr_benc * top )
     tr_benc *args;
     if( ( tr_bencDictFindDict( top, "arguments", &args ) ) )
     {
+        double d;
         const char * str;
         int64_t      i;
         tr_bool      boolVal;
+        char buf[64];
 
         printf( "VERSION\n" );
         if( tr_bencDictFindStr( args,  "version", &str ) )
@@ -1359,6 +1363,8 @@ printSession( tr_benc * top )
             printf( "  Peer exchange allowed: %s\n", ( boolVal ? "Yes" : "No" ) );
         if( tr_bencDictFindStr( args,  TR_PREFS_KEY_ENCRYPTION, &str ) )
             printf( "  Encryption: %s\n", str );
+        if( tr_bencDictFindReal( args, TR_PREFS_KEY_MAX_CACHE_SIZE_MiB, &d ) )
+            printf( "  Maximum memory cache size: %s\n", strlsize( buf, d*MiB, sizeof( buf ) ) );
         printf( "\n" );
 
         {
@@ -1382,6 +1388,8 @@ printSession( tr_benc * top )
                 tr_bencDictFindBool( args, "seedRatioLimited", &seedRatioLimited) )
             {
                 char buf[128];
+                char buf2[128];
+                char buf3[128];
 
                 printf( "LIMITS\n" );
                 printf( "  Peer limit: %" PRId64 "\n", peerLimit );
@@ -1393,26 +1401,30 @@ printSession( tr_benc * top )
                 printf( "  Default seed ratio limit: %s\n", buf );
 
                 if( altEnabled )
-                    tr_snprintf( buf, sizeof( buf ), "%"PRId64" KiB/s", altUp );
+                    strlspeed( buf, altUp*1024, sizeof( buf ) );
                 else if( upEnabled )
-                    tr_snprintf( buf, sizeof( buf ), "%"PRId64" KiB/s", upLimit );
+                    strlspeed( buf, upLimit*1024, sizeof( buf ) );
                 else
                     tr_strlcpy( buf, "Unlimited", sizeof( buf ) );
-                printf( "  Upload speed limit: %s  (%s limit: %"PRId64" KiB/s; %s turtle limit: %"PRId64" KiB/s)\n",
+                printf( "  Upload speed limit: %s  (%s limit: %s; %s turtle limit: %s)\n",
                         buf,
-                        (upEnabled?"Enabled":"Disabled"), upLimit,
-                        (altEnabled?"Enabled":"Disabled"), altUp );
+                        upEnabled ? "Enabled" : "Disabled",
+                        strlspeed( buf2, upLimit*1024, sizeof( buf2 ) ),
+                        altEnabled ? "Enabled" : "Disabled",
+                        strlspeed( buf3, altUp*1024, sizeof( buf3 ) ) );
 
                 if( altEnabled )
-                    tr_snprintf( buf, sizeof( buf ), "%"PRId64" KiB/s", altDown );
+                    strlspeed( buf, altDown*1024, sizeof( buf ) );
                 else if( downEnabled )
-                    tr_snprintf( buf, sizeof( buf ), "%"PRId64" KiB/s", downLimit );
+                    strlspeed( buf, downLimit*1024, sizeof( buf ) );
                 else
                     tr_strlcpy( buf, "Unlimited", sizeof( buf ) );
-                printf( "  Download speed limit: %s  (%s limit: %"PRId64" KiB/s; %s turtle limit: %"PRId64" KiB/s)\n",
+                printf( "  Download speed limit: %s  (%s limit: %s; %s turtle limit: %s)\n",
                         buf,
-                        (downEnabled?"Enabled":"Disabled"), downLimit,
-                        (altEnabled?"Enabled":"Disabled"), altDown );
+                        downEnabled ? "Enabled" : "Disabled",
+                        strlspeed( buf2, downLimit*1024, sizeof( buf2 ) ),
+                        altEnabled ? "Enabled" : "Disabled",
+                        strlspeed( buf2, altDown*1024, sizeof( buf2 ) ) );
 
                 if( altTimeEnabled ) {
                     printf( "  Turtle schedule: %02d:%02d - %02d:%02d  ",
@@ -1816,6 +1828,8 @@ processArgs( const char * host, int port, int argc, const char ** argv )
                           break;
                 case 'C': tr_bencDictAddBool( args, TR_PREFS_KEY_INCOMPLETE_DIR_ENABLED, FALSE );
                           break;
+                case 'e': tr_bencDictAddReal( args, TR_PREFS_KEY_MAX_CACHE_SIZE_MiB, atof(optarg) );
+                          break;
                 case 910: tr_bencDictAddStr( args, TR_PREFS_KEY_ENCRYPTION, "required" );
                           break;
                 case 911: tr_bencDictAddStr( args, TR_PREFS_KEY_ENCRYPTION, "preferred" );
@@ -2147,6 +2161,9 @@ main( int argc, char ** argv )
         showUsage( );
         return EXIT_FAILURE;
     }
+
+    tr_formatter_size_init ( 1024, _("B"), _("KiB"), _("MiB"), _("GiB") );
+    tr_formatter_speed_init ( 1024, _("B/s"), _("KiB/s"), _("MiB/s"), _("GiB/s") );
 
     getHostAndPort( &argc, argv, &host, &port );
     if( host == NULL )

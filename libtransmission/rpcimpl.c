@@ -861,7 +861,7 @@ portTested( tr_session       * session UNUSED,
 
     if( response_code != 200 )
     {
-        tr_snprintf( result, sizeof( result ), "http error %ld: %s",
+        tr_snprintf( result, sizeof( result ), "portTested: http error %ld: %s",
                      response_code, tr_webGetResponseStr( response_code ) );
     }
     else /* success */
@@ -903,14 +903,14 @@ gotNewBlocklist( tr_session       * session,
 
     if( response_code != 200 )
     {
-        tr_snprintf( result, sizeof( result ), "http error %ld: %s",
+        tr_snprintf( result, sizeof( result ), "gotNewBlocklist: http error %ld: %s",
                      response_code, tr_webGetResponseStr( response_code ) );
     }
     else /* successfully fetched the blocklist... */
     {
         const char * configDir = tr_sessionGetConfigDir( session );
         char * filename = tr_buildPath( configDir, "blocklist.tmp", NULL );
-        FILE * fp = fopen( filename, "w+" );
+        FILE * fp = fopen( filename, "wb+" );
 
         if( fp == NULL )
         {
@@ -1024,7 +1024,7 @@ gotMetadataFromURL( tr_session       * session UNUSED,
     else
     {
         char result[1024];
-        tr_snprintf( result, sizeof( result ), "http error %ld: %s",
+        tr_snprintf( result, sizeof( result ), "gotMetadataFromURL: http error %ld: %s",
                      response_code, tr_webGetResponseStr( response_code ) );
         tr_idle_function_done( data->data, result );
     }
@@ -1186,6 +1186,8 @@ sessionSet( tr_session               * session,
 
     assert( idle_data == NULL );
 
+    if( tr_bencDictFindReal( args_in, TR_PREFS_KEY_MAX_CACHE_SIZE_MiB, &d ) )
+        tr_sessionSetCacheLimit( session, d );
     if( tr_bencDictFindInt( args_in, TR_PREFS_KEY_ALT_SPEED_UP, &i ) )
         tr_sessionSetAltSpeed( session, TR_UP, i );
     if( tr_bencDictFindInt( args_in, TR_PREFS_KEY_ALT_SPEED_DOWN, &i ) )
@@ -1325,6 +1327,7 @@ sessionGet( tr_session               * s,
     tr_bencDictAddInt ( d, TR_PREFS_KEY_ALT_SPEED_TIME_DAY,tr_sessionGetAltSpeedDay(s) );
     tr_bencDictAddBool( d, TR_PREFS_KEY_ALT_SPEED_TIME_ENABLED, tr_sessionUsesAltSpeedTime(s) );
     tr_bencDictAddBool( d, TR_PREFS_KEY_BLOCKLIST_ENABLED, tr_blocklistIsEnabled( s ) );
+    tr_bencDictAddReal( d, TR_PREFS_KEY_MAX_CACHE_SIZE_MiB, tr_sessionGetCacheLimit( s ) );
     tr_bencDictAddInt ( d, "blocklist-size", tr_blocklistGetRuleCount( s ) );
     tr_bencDictAddStr ( d, "config-dir", tr_sessionGetConfigDir( s ) );
     tr_bencDictAddStr ( d, TR_PREFS_KEY_DOWNLOAD_DIR, tr_sessionGetDownloadDir( s ) );

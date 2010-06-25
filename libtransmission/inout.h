@@ -17,6 +17,7 @@
 #ifndef TR_IO_H
 #define TR_IO_H 1
 
+struct tr_cache;
 struct tr_torrent;
 
 /**
@@ -41,11 +42,12 @@ int tr_ioRead( struct tr_torrent   * tor,
  *                       piece being read is completed but unchecked
  *                       and fails a hash check.
  */
-int tr_ioReadCheckPiece( struct tr_torrent   * tor,
-                         tr_piece_index_t      pieceIndex,
-                         uint32_t              offset,
-                         uint32_t              len,
-                         uint8_t             * setme );
+int tr_cacheReadCheckBlock( struct tr_cache   * cache,
+                            struct tr_torrent * tor,
+                            tr_piece_index_t    pieceIndex,
+                            uint32_t            offset,
+                            uint32_t            len,
+                            uint8_t           * setme );
 
 int
 tr_ioPrefetch( tr_torrent       * tor,

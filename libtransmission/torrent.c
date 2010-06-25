@@ -29,6 +29,7 @@
 #include "announcer.h"
 #include "bandwidth.h"
 #include "bencode.h"
+#include "cache.h"
 #include "completion.h"
 #include "crypto.h" /* for tr_sha1 */
 #include "resume.h"
@@ -359,13 +360,8 @@ tr_torrentClearError( tr_torrent * tor )
 }
 
 static void
-onTrackerResponse( void * tracker UNUSED,
-                   void * vevent,
-                   void * user_data )
+onTrackerResponse( tr_torrent * tor, const tr_tracker_event * event, void * unused UNUSED )
 {
-    tr_torrent * tor = user_data;
-    tr_tracker_event * event = vevent;
-
     switch( event->messageType )
     {
         case TR_TRACKER_PEERS:
@@ -544,8 +540,8 @@ static void torrentStart( tr_torrent * tor );
  * (1) most clients decline requests over 16 KiB
  * (2) pieceSize must be a multiple of block size
  */
-static uint32_t
-getBlockSize( uint32_t pieceSize )
+uint32_t
+tr_getBlockSize( uint32_t pieceSize )
 {
     uint32_t b = pieceSize;
 
@@ -565,7 +561,7 @@ torrentInitFromInfo( tr_torrent * tor )
     uint64_t t;
     tr_info * info = &tor->info;
 
-    tor->blockSize = getBlockSize( info->pieceSize );
+    tor->blockSize = tr_getBlockSize( info->pieceSize );
 
     if( info->pieceSize )
         tor->lastPieceSize = info->totalSize % info->pieceSize;
@@ -727,8 +723,7 @@ torrentInit( tr_torrent * tor, const tr_ctor * ctor )
         }
     }
 
-    tor->tiers = tr_announcerAddTorrent( tor->session->announcer, tor );
-    tor->tiersSubscription = tr_announcerSubscribe( tor->tiers, onTrackerResponse, tor );
+    tor->tiers = tr_announcerAddTorrent( tor->session->announcer, tor, onTrackerResponse, NULL );
 
     if( doStart )
         torrentStart( tor );
@@ -762,7 +757,7 @@ torrentParseImpl( const tr_ctor * ctor, tr_info * setmeInfo,
     if( !didParse )
         result = TR_PARSE_ERR;
 
-    if( didParse && hasInfo && !getBlockSize( setmeInfo->pieceSize ) )
+    if( didParse && hasInfo && !tr_getBlockSize( setmeInfo->pieceSize ) )
         result = TR_PARSE_ERR;
 
     if( didParse && session && tr_torrentExists( session, setmeInfo->hash ) )
@@ -1315,7 +1310,6 @@ freeTorrent( tr_torrent * tor )
 
     tr_cpDestruct( &tor->completion );
 
-    tr_announcerUnsubscribe( tor->tiers, tor->tiersSubscription );
     tr_announcerRemoveTorrent( session->announcer, tor );
 
     tr_bitfieldDestruct( &tor->checkedPieces );
@@ -1519,6 +1513,7 @@ stopTorrent( void * vtor )
     tr_verifyRemove( tor );
     tr_peerMgrStopTorrent( tor );
     tr_announcerTorrentStopped( tor );
+    tr_cacheFlushTorrent( tor->session->cache, tor );
 
     tr_fdTorrentClose( tor->session, tor->uniqueId );
 
@@ -1666,6 +1661,15 @@ tr_torrentClearRatioLimitHitCallback( tr_torrent * torrent )
     tr_torrentSetRatioLimitHitCallback( torrent, NULL, NULL );
 }
 
+static void
+tr_setenv( const char * name, const char * value, tr_bool override )
+{
+#ifdef WIN32
+    putenv( tr_strdup_printf( "%s=%s", name, value ) ); /* leaks memory... */
+#else
+    setenv( name, value, override );
+#endif
+}
 
 static void
 torrentCallScript( tr_torrent * tor, const char * script )
@@ -1681,16 +1685,16 @@ torrentCallScript( tr_torrent * tor, const char * script )
         clearenv( );
 #endif
 
-        setenv( "TR_APP_VERSION", SHORT_VERSION_STRING, 1 );
+        tr_setenv( "TR_APP_VERSION", SHORT_VERSION_STRING, 1 );
 
         tr_snprintf( buf, sizeof( buf ), "%d", tr_torrentId( tor ) );
-        setenv( "TR_TORRENT_ID", buf, 1 );
-        setenv( "TR_TORRENT_NAME", tr_torrentName( tor ), 1 );
-        setenv( "TR_TORRENT_DIR", tor->currentDir, 1 );
-        setenv( "TR_TORRENT_HASH", tor->info.hashString, 1 );
+        tr_setenv( "TR_TORRENT_ID", buf, 1 );
+        tr_setenv( "TR_TORRENT_NAME", tr_torrentName( tor ), 1 );
+        tr_setenv( "TR_TORRENT_DIR", tor->currentDir, 1 );
+        tr_setenv( "TR_TORRENT_HASH", tor->info.hashString, 1 );
         tr_strlcpy( buf, ctime( &now ), sizeof( buf ) );
         *strchr( buf,'\n' ) = '\0';
-        setenv( "TR_TIME_LOCALTIME", buf, 1 );
+        tr_setenv( "TR_TIME_LOCALTIME", buf, 1 );
         tr_torinf( tor, "Calling script \"%s\"", script );
         system( script );
     }
@@ -2144,17 +2148,37 @@ tr_torrentGetMTimes( const tr_torrent * tor, size_t * setme_n )
 ****
 ***/
 
+static int
+compareTrackerByTier( const void * va, const void * vb )
+{
+    const tr_tracker_info * a = va;
+    const tr_tracker_info * b = vb;
+
+    /* sort by tier */
+    if( a->tier != b->tier )
+        return a->tier - b->tier;
+
+    /* get the effects of a stable sort by comparing the two elements' addresses */
+    return a - b;
+}
+
 tr_bool
 tr_torrentSetAnnounceList( tr_torrent             * tor,
-                           const tr_tracker_info  * trackers,
+                           const tr_tracker_info  * trackers_in,
                            int                      trackerCount )
 {
     int i;
     tr_benc metainfo;
     tr_bool ok = TRUE;
+    tr_tracker_info * trackers;
+
     tr_torrentLock( tor );
 
     assert( tr_isTorrent( tor ) );
+
+    /* ensure the trackers' tiers are in ascending order */
+    trackers = tr_memdup( trackers_in, sizeof( tr_tracker_info ) * trackerCount );
+    qsort( trackers, trackerCount, sizeof( tr_tracker_info ), compareTrackerByTier );
 
     /* look for bad URLs */
     for( i=0; ok && i<trackerCount; ++i )
@@ -2235,6 +2259,8 @@ tr_torrentSetAnnounceList( tr_torrent             * tor,
     }
 
     tr_torrentUnlock( tor );
+
+    tr_free( trackers );
     return ok;
 }
 
@@ -2559,14 +2585,6 @@ setLocation( void * vdata )
         /* bad idea to move files while they're being verified... */
         tr_verifyRemove( tor );
 
-        /* if the torrent is running, stop it and set a flag to
-         * restart after we're done */
-        if( tor->isRunning )
-        {
-            tr_torrentStop( tor );
-            tor->startAfterVerify = TRUE;
-        }
-
         /* try to move the files.
          * FIXME: there are still all kinds of nasty cases, like what
          * if the target directory runs out of space halfway through... */
@@ -2621,10 +2639,6 @@ setLocation( void * vdata )
             tr_torrentSetDownloadDir( tor, location );
             if( verify_needed )
                 tr_torrentVerify( tor );
-            else if( tor->startAfterVerify ) {
-                tor->startAfterVerify = FALSE;
-                tr_torrentStart( tor );
-            }
         }
     }
 

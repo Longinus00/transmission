@@ -194,7 +194,6 @@ struct tr_torrent
     tr_completeness            completeness;
 
     struct tr_torrent_tiers  * tiers;
-    struct tr_publisher_tag  * tiersSubscription;
 
     time_t                     dhtAnnounceAt;
     time_t                     dhtAnnounce6At;
@@ -382,6 +381,8 @@ const char * tr_torrentName( const tr_torrent * tor )
 
     return tor->info.name;
 }
+
+uint32_t tr_getBlockSize( uint32_t pieceSize );
 
 /**
  * Tell the tr_torrent that one of its files has become complete
