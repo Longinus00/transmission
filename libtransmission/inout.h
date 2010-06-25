@@ -36,13 +36,13 @@ int tr_ioRead( struct tr_torrent   * tor,
                uint8_t             * setme );
 
 /**
- * Reads the block specified by the piece index, offset, and length.
+ * Reads the piece specified by the piece index, offset, and length.
  * @return 0 on success, or an errno value on failure. Additionally,
  *                       an errno value of EIO is also return if the
  *                       piece being read is completed but unchecked
  *                       and fails a hash check.
  */
-int tr_cacheReadCheckBlock( struct tr_cache   * cache,
+int tr_cacheReadCheckPiece( struct tr_cache   * cache,
                             struct tr_torrent * tor,
                             tr_piece_index_t    pieceIndex,
                             uint32_t            offset,

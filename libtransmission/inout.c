@@ -268,7 +268,7 @@ tr_ioRead( tr_torrent       * tor,
 }
 
 int
-tr_cacheReadCheckBlock( tr_cache         * cache,
+tr_cacheReadCheckPiece( tr_cache         * cache,
                         tr_torrent       * tor,
                         tr_piece_index_t   pieceIndex,
                         uint32_t           offset,
