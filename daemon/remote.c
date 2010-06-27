@@ -587,6 +587,7 @@ static const char * files_keys[] = {
 static const char * details_keys[] = {
     "activityDate",
     "addedDate",
+    "bandwidthPriority",
     "comment",
     "corruptEver",
     "creator",
@@ -748,6 +749,9 @@ getStatusString( tr_benc * t, char * buf, size_t buflen )
 
     return buf;
 }
+
+static const char *bandwidthPriorityNames[] =
+    { "Low", "Normal", "High", "Invalid" };
 
 static void
 printDetails( tr_benc * top )
@@ -1067,7 +1071,7 @@ printDetails( tr_benc * top )
                 printf( "  Piece Size: %" PRId64 "\n", i );
             printf( "\n" );
 
-            printf( "LIMITS\n" );
+            printf( "LIMITS & BANDWIDTH\n" );
             if( tr_bencDictFindBool( t, "downloadLimited", &boolVal )
                 && tr_bencDictFindInt( t, "downloadLimit", &i ) )
             {
@@ -1090,6 +1094,10 @@ printDetails( tr_benc * top )
                 printf( "  Honors Session Limits: %s\n", ( boolVal ? "Yes" : "No" ) );
             if( tr_bencDictFindInt ( t, "peer-limit", &i ) )
                 printf( "  Peer limit: %" PRId64 "\n", i );
+            if (tr_bencDictFindInt (t, "bandwidthPriority", &i))
+                printf ("  Bandwidth Priority: %s\n",
+                        bandwidthPriorityNames[(i + 1) & 3]);
+   
             printf( "\n" );
 
             printf( "PIECES\n" );
@@ -1542,7 +1550,7 @@ processResponse( const char * host, int port, const void * response, size_t len 
                         && tr_bencDictFindDict( b, "torrent-added", &b )
                         && tr_bencDictFindInt( b, "id", &i ) )
                     tr_snprintf( id, sizeof(id), "%"PRId64, i );
-                break;
+                /* fall-through to default: to give success or failure msg */
             }
 
             default:
@@ -2162,8 +2170,8 @@ main( int argc, char ** argv )
         return EXIT_FAILURE;
     }
 
-    tr_formatter_size_init ( 1024, _("B"), _("KiB"), _("MiB"), _("GiB") );
-    tr_formatter_speed_init ( 1024, _("B/s"), _("KiB/s"), _("MiB/s"), _("GiB/s") );
+    tr_formatter_size_init ( 1024, "B", "KiB", "MiB", "GiB" );
+    tr_formatter_speed_init ( 1024, "B/s", "KiB/s", "MiB/s", "GiB/s" );
 
     getHostAndPort( &argc, argv, &host, &port );
     if( host == NULL )
