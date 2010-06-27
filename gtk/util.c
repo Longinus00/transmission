@@ -33,6 +33,7 @@
 
 #include <libtransmission/transmission.h> /* TR_RATIO_NA, TR_RATIO_INF */
 #include <libtransmission/utils.h> /* tr_inf */
+#include <libtransmission/web.h> /* tr_webResponseStr() */
 #include <libtransmission/version.h> /* tr_inf */
 
 #include "conf.h"
@@ -715,6 +716,16 @@ gtr_widget_set_tooltip_text( GtkWidget * w, const char * tip )
 #endif
 }
 
+gboolean
+gtr_widget_get_realized( GtkWidget * w )
+{
+#if GTK_CHECK_VERSION( 2,20,0 )
+    return gtk_widget_get_realized( w );
+#else
+    return GTK_WIDGET_REALIZED( w ) != 0;
+#endif
+}
+
 void
 gtr_toolbar_set_orientation( GtkToolbar      * toolbar,
                              GtkOrientation    orientation )
@@ -725,6 +736,7 @@ gtr_toolbar_set_orientation( GtkToolbar      * toolbar,
     gtk_toolbar_set_orientation( toolbar, orientation );
 #endif
 }
+
 
 /***
 ****
@@ -801,6 +813,25 @@ gtr_timeout_add_seconds( guint seconds, GSourceFunc function, gpointer data )
                                gtr_func_data_new( function, data ),
                                gtr_func_data_free );
 #endif
+}
+
+void
+gtr_http_failure_dialog( GtkWidget * parent, const char * url, long response_code )
+{
+    GtkWindow * window = getWindow( parent );
+
+    GtkWidget * w = gtk_message_dialog_new( window, 0,
+                                            GTK_MESSAGE_ERROR,
+                                            GTK_BUTTONS_CLOSE,
+                                            _( "Error opening \"%s\"" ), url );
+
+    gtk_message_dialog_format_secondary_text( GTK_MESSAGE_DIALOG( w ),
+                                              _( "Server returned \"%1$ld %2$s\"" ),
+                                              response_code,
+                                              tr_webGetResponseStr( response_code ) );
+
+    g_signal_connect_swapped( w, "response", G_CALLBACK( gtk_widget_destroy ), w );
+    gtk_widget_show( w );
 }
 
 void

@@ -11,6 +11,8 @@
  */
 
 #include <assert.h>
+#include <errno.h> /* error codes ERANGE, ... */
+#include <limits.h> /* INT_MAX */
 #include <string.h> /* memcpy, memcmp, strstr */
 #include <stdlib.h> /* qsort */
 
@@ -62,8 +64,8 @@ enum
     MAX_UPLOAD_IDLE_SECS = ( 60 * 5 ),
 
     /* max number of peers to ask for per second overall.
-    * this throttle is to avoid overloading the router */
-    MAX_CONNECTIONS_PER_SECOND = 8,
+     * this throttle is to avoid overloading the router */
+    MAX_CONNECTIONS_PER_SECOND = 12,
 
     MAX_CONNECTIONS_PER_PULSE = (int)(MAX_CONNECTIONS_PER_SECOND * (RECONNECT_PERIOD_MSEC/1000.0)),
 
@@ -2578,6 +2580,7 @@ struct ChokeData
     tr_bool         isInterested;
     tr_bool         isChoked;
     int             rate;
+    int             salt;
     tr_peer *       peer;
 };
 
@@ -2593,6 +2596,9 @@ compareChoke( const void * va,
 
     if( a->isChoked != b->isChoked ) /* prefer unchoked */
         return a->isChoked ? 1 : -1;
+
+    if( a->salt != b->salt ) /* random order */
+        return a->salt - b->salt;
 
     return 0;
 }
@@ -2664,6 +2670,7 @@ rechokeUploads( Torrent * t, const uint64_t now )
             n->isInterested = peer->peerIsInterested;
             n->isChoked     = peer->peerIsChoked;
             n->rate         = getRate( t->tor, atom, now );
+            n->salt         = tr_cryptoWeakRandInt( INT_MAX );
         }
     }
 
@@ -3166,10 +3173,11 @@ bandwidthPulse( int foo UNUSED, short bar UNUSED, void * vmgr )
         }
     }
 
-    /* possibly stop torrents that have an error */
+    /* stop torrents that are ready to stop, but couldn't be stopped earlier
+     * during the peer-io callback call chain */
     tor = NULL;
     while(( tor = tr_torrentNext( mgr->session, tor )))
-        if( tor->isRunning && ( tor->error == TR_STAT_LOCAL_ERROR ))
+        if( tor->isStopping )
             tr_torrentStop( tor );
 
     reconnectPulse( 0, 0, mgr );
@@ -3389,6 +3397,10 @@ getPeerCandidateScore( const tr_torrent * tor, const struct peer_atom * atom, ui
 
     /* prefer recently-started torrents */
     i = torrentWasRecentlyStarted( tor ) ? 0 : 1;
+    score = addValToKey( score, 1, i );
+
+    /* prefer torrents we're downloading with */
+    i = tr_torrentIsSeed( tor ) ? 1 : 0;
     score = addValToKey( score, 1, i );
 
     /* prefer peers that we might have a chance of uploading to...
