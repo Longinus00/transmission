@@ -29,8 +29,6 @@ void tr_verifyAdd( tr_torrent *      tor,
 
 void tr_verifyRemove( tr_torrent * tor );
 
-tr_bool tr_verifyInProgressTorrent( const tr_torrent * tor );
-
 tr_bool tr_verifyInProgress( void );
 
 void tr_verifyClose( tr_session * );
