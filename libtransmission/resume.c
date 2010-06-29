@@ -586,6 +586,7 @@ static int
 loadBencFromFile( tr_torrent * tor,
                   tr_benc    * top)
 {
+    int ret;
     char * filename;
 
     assert( tr_isTorrent( tor ) );
@@ -595,15 +596,16 @@ loadBencFromFile( tr_torrent * tor,
     if( tr_bencLoadFile( top, TR_FMT_BENC, filename ) )
     {
         tr_tordbg( tor, "Couldn't read \"%s\"", filename );
-
-        tr_free( filename );
-        return 1;
+        ret = 1;
+    }
+    else
+    {
+        tr_tordbg( tor, "Read resume file \"%s\"", filename );
+        ret = 0;
     }
 
-    tr_tordbg( tor, "Read resume file \"%s\"", filename );
-
     tr_free( filename );
-    return 0;
+    return ret;
 }
 
 static uint64_t
