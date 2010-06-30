@@ -870,7 +870,7 @@ editTracker( tr_torrent * tor,
         tr_bool rename = FALSE;
         tr_bool move = FALSE;
 
-        if( tr_bencDictFindStr( tracker, "url", &new ) )
+        if( tr_bencDictFindStr( tracker, "announce-new", &new ) )
         {
             rename = !findTrackerByURL( inf, new, NULL );
             if( !rename )
@@ -904,7 +904,7 @@ editTracker( tr_torrent * tor,
             trackerCount = i;
 
             if( !tr_torrentSetAnnounceList( tor, trackers, trackerCount ) )
-                errmsg = "big bad error!";
+                errmsg = "error setting announce list";
 
             for( i = 0; i < trackerCount; ++i )
                 tr_free( trackers[i].announce );
@@ -955,7 +955,7 @@ removeTracker( tr_torrent * tor,
         trackerCount = j;
 
         if( !tr_torrentSetAnnounceList( tor, trackers, trackerCount ) )
-            errmsg = "big bad error!";
+            errmsg = "error setting announce list";
 
         for( i = 0; i < trackerCount; ++i )
             tr_free( trackers[i].announce );

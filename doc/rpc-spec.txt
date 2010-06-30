@@ -111,21 +111,21 @@
    ----------------------+---------------------------------+
    trackerAdd            | an object containing:           |
                          +-----------------------+---------+
-                         | announce              | string  | the announce URL of the tracker
-                         | tier (optional)       | number  | the tier to add the tracker to
+                         | announce              | string  | announce URL of the tracker
+                         | tier (optional)       | number  | tier to add the tracker to
    ----------------------+---------------------------------+
    trackerEdit           | an object containing:           |
                          +-----------------------+---------+
-                         | announce (or id)      | string  | the announce URL of the tracker to modify
-                         | id (or announce)      | number  | the trackerId of the tracker to modify (see trackerStats)
+                         | announce (or id)      | string  | announce URL of the tracker to modify
+                         | id (or announce)      | number  | trackerId of the tracker to modify (see trackerStats)
                          +-----------------------+---------+
-                         | tier (and/or url)     | number  | new tier to change the tracker to
-                         | url (and/or tier)     | string  | new announce URL for the tracker
+                         | announce-new          | string  | new announce URL for the tracker
+                         | tier                  | number  | tier to change the tracker to
    ----------------------+---------------------------------+
    trackerRemove         | an object containing:           |
                          +-----------------------+---------+
-                         | announce (or id)      | string  | the announce URL of the tracker to remove
-                         | id (or announce)      | number  | the trackerId of the tracker to remove (see trackerStats)
+                         | announce (or id)      | string  | announce URL of the tracker to remove
+                         | id (or announce)      | number  | trackerId of the tracker to remove (see trackerStats)
                          +-----------------------+---------+
 
    Just as an empty "ids" value is shorthand for "all ids", using an empty array
