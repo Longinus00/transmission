@@ -675,7 +675,6 @@ Details :: refresh( )
     QMap<QString,QTreeWidgetItem*> trackerTiers;
     QMap<QString,QTreeWidgetItem*> trackerItems;
     const time_t now( time( 0 ) );
-    //const bool showBackup = myPrefs.getBool( Prefs::SHOW_BACKUP_TRACKERS );
     const bool showScrape = myPrefs.getBool( Prefs::SHOW_TRACKER_SCRAPES );
     foreach( const Torrent * t, torrents )
     {
@@ -690,14 +689,11 @@ Details :: refresh( )
             QTreeWidgetItem * tier = (QTreeWidgetItem*) myTrackerTiers.value( tierKey, 0 );
 
             if( tier == 0 ) // new tier
-                tier = (QTreeWidgetItem*) trackerTiers.value( tierKey, 0 );
-
-            if( tier == 0 ) // new tier
             {
                 QFont tierFont;
                 tier = new QTreeWidgetItem( myTrackerTree );
                 myTrackerTree->addTopLevelItem( tier );
-                str = "Tier: " + QString::number( trackerStat.tier );
+                str = "Tier: " + QString::number( trackerStat.tier + 1 );
                 tier->setText( 0, str );
                 tierFont.setBold( true );
                 tier->setFont( 0, tierFont );
@@ -842,10 +838,10 @@ Details :: refresh( )
     }
     QList<QTreeWidgetItem*> tierList = trackerTiers.values();
     QList<QTreeWidgetItem*> itemList = trackerItems.values();
-    for( int i = 0; i < myTrackerTree->topLevelItemCount(); i++ )
+    for( int i = 0; i < myTrackerTree->topLevelItemCount(); ++i )
     {
         QTreeWidgetItem * tier = myTrackerTree->topLevelItem( i );
-        for( int j = 0; j < tier->childCount(); j++ )
+        for( int j = 0; j < tier->childCount(); ++j )
         {
             if( !itemList.contains( tier->child( j ) ) ) // tracker has disappeared
                 delete tier->takeChild( j-- );
@@ -996,12 +992,6 @@ Details :: createInfoTab( )
 ***/
 
 void
-Details :: onShowBackupTrackersToggled( bool val )
-{
-    myPrefs.set( Prefs::SHOW_BACKUP_TRACKERS, val );
-}
-
-void
 Details :: onShowTrackerScrapesToggled( bool val )
 {
     myPrefs.set( Prefs::SHOW_TRACKER_SCRAPES, val );
@@ -1078,10 +1068,7 @@ Details :: onTrackerSelectionChanged( )
 {
     const QList<QTreeWidgetItem*> items = myTrackerTree->selectedItems();
     if( items.count() == 1 )
-    {
-        const QTreeWidgetItem * item = items.first();
-        myEditTrackerButton->setEnabled( item->data( 0, TRACKERID ).toInt() >= 0 );
-    }
+        myEditTrackerButton->setEnabled( items.first()->data( 0, TRACKERID ).toInt() >= 0 );
     else
         myEditTrackerButton->setEnabled( false );
     myRemoveTrackerButton->setEnabled( !items.isEmpty() );
@@ -1147,7 +1134,7 @@ Details :: onEditTrackerPushed( )
             ids << torId;
             tr_bencInitDict( &top, 2 );
             tr_bencDictAddStr( &top, "announce", item->data( 0, TRACKERURL ).toByteArray() );
-            tr_bencDictAddStr( &top, "url", url );
+            tr_bencDictAddStr( &top, "announce-new", url );
 
             mySession.torrentSet( ids, "trackerEdit", &top );
         }
@@ -1285,15 +1272,14 @@ Details :: createTrackerTab( )
     QCheckBox * c;
     QPushButton * p;
     QWidget * top = new QWidget;
-    //QGridLayout * g = new QGridLayout( top );
     QVBoxLayout * v = new QVBoxLayout( top );
     QHBoxLayout * h = new QHBoxLayout();
     QVBoxLayout * v2 = new QVBoxLayout();
 
-    v->setSpacing( HIG :: PAD_BIG );
+    v->setSpacing( HIG::PAD_BIG );
     v->setContentsMargins( HIG::PAD_BIG, HIG::PAD_BIG, HIG::PAD_BIG, HIG::PAD_BIG );
 
-    h->setSpacing( HIG :: PAD );
+    h->setSpacing( HIG::PAD );
     h->setContentsMargins( HIG::PAD_SMALL, HIG::PAD_SMALL, HIG::PAD_SMALL, HIG::PAD_SMALL );
 
     v2->setSpacing( HIG::PAD );
@@ -1347,12 +1333,6 @@ Details :: createTrackerTab( )
     myShowTrackerScrapesCheck = c;
     v->addWidget( c, 1 );
     connect( c, SIGNAL(clicked(bool)), this, SLOT(onShowTrackerScrapesToggled(bool)) );
-
-    c = new QCheckBox( tr( "Show &backup trackers" ) );
-    c->setChecked( myPrefs.getBool( Prefs::SHOW_BACKUP_TRACKERS ) );
-    myShowBackupTrackersCheck = c;
-    v->addWidget( c, 2 );
-    connect( c, SIGNAL(clicked(bool)), this, SLOT(onShowBackupTrackersToggled(bool)) );
 
     return top;
 }

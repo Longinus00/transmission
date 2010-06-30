@@ -98,7 +98,6 @@ class Details: public QDialog
         QCheckBox * mySingleDownCheck;
         QCheckBox * mySingleUpCheck;
         QCheckBox * myShowTrackerScrapesCheck;
-        QCheckBox * myShowBackupTrackersCheck;
         QPushButton * myAddTrackerButton;
         QPushButton * myEditTrackerButton;
         QPushButton * myRemoveTrackerButton;
@@ -147,7 +146,6 @@ class Details: public QDialog
         void onUploadLimitChanged( int );
         void onSeedUntilChanged( bool );
         void onSeedRatioLimitChanged( double );
-        void onShowBackupTrackersToggled( bool );
         void onShowTrackerScrapesToggled( bool );
         void onTrackerSelectionChanged( );
         void onAddTrackerPushed( );
