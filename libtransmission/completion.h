@@ -92,7 +92,7 @@ static inline uint64_t tr_cpLeftUntilDone( const tr_completion * cp )
     return tr_cpSizeWhenDone( cp ) - cp->sizeNow;
 }
 
-static inline float tr_cpPercentComplete( const tr_completion * cp )
+static inline double tr_cpPercentComplete( const tr_completion * cp )
 {
     const double ratio = tr_getRatio( cp->sizeNow, tr_torrentInfo(cp->tor)->totalSize );
     if( (int)ratio == TR_RATIO_NA )
@@ -103,10 +103,11 @@ static inline float tr_cpPercentComplete( const tr_completion * cp )
         return ratio;
 }
 
-static inline float tr_cpPercentDone( const tr_completion * cp )
+static inline double tr_cpPercentDone( const tr_completion * cp )
 {
     const double ratio = tr_getRatio( cp->sizeNow, tr_cpSizeWhenDone( cp ) );
-    return (ratio == TR_RATIO_NA ||  ratio == TR_RATIO_INF) ? 0.0f : ratio;
+    const int iratio = (int)ratio;
+    return ((iratio == TR_RATIO_NA) || (iratio == TR_RATIO_INF)) ? 0.0f : ratio;
 }
 
 /**

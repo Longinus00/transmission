@@ -118,15 +118,15 @@ void tr_msgInit( void );
 
 #define TR_MAX_MSG_LOG 10000
 
-extern int messageLevel;
+extern tr_msg_level messageLevel;
 
-static inline tr_bool tr_msgLoggingIsActive( int level )
+static inline tr_bool tr_msgLoggingIsActive( tr_msg_level level )
 {
     return messageLevel >= level;
 }
 
 void tr_msg( const char * file, int line,
-             int level,
+             tr_msg_level level,
              const char * torrent,
              const char * fmt, ... ) TR_GNUC_PRINTF( 5, 6 );
 
@@ -268,7 +268,7 @@ void tr_timerAddMsec( struct event * timer, int milliseconds ) TR_GNUC_NONNULL(1
 uint64_t tr_date( void );
 
 /** @brief sleep the specified number of milliseconds */
-void tr_wait_msec( uint64_t delay_milliseconds );
+void tr_wait_msec( long int delay_milliseconds );
 
 /**
  * @brief make a copy of 'str' whose non-utf8 content has been corrected or stripped
@@ -322,7 +322,7 @@ static inline void tr_free( void * p )
  * @param byteCount the number of bytes to copy
  * @return a newly-allocated copy of `src' that can be freed with tr_free()
  */
-static inline void* tr_memdup( const void * src, int byteCount )
+static inline void* tr_memdup( const void * src, size_t byteCount )
 {
     return memcpy( tr_malloc( byteCount ), src, byteCount );
 }
@@ -353,7 +353,7 @@ char* tr_strndup( const void * in, int len ) TR_GNUC_MALLOC;
  */
 static inline char* tr_strdup( const void * in )
 {
-    return tr_strndup( in, in ? strlen( (const char *) in ) : 0 );
+    return tr_strndup( in, in ? (int)strlen((const char *)in) : 0 );
 }
 
 /** @brief similar to bsearch() but returns the index of the lower bound */
@@ -464,7 +464,7 @@ int  tr_urlParse( const char * url,
 
 /** @brief return TR_RATIO_NA, TR_RATIO_INF, or a number in [0..1]
     @return TR_RATIO_NA, TR_RATIO_INF, or a number in [0..1] */
-double tr_getRatio( double numerator, double denominator );
+double tr_getRatio( uint64_t numerator, uint64_t denominator );
 
 /**
  * @brief Given a string like "1-4" or "1-4,6,9,14-51", this returns a
@@ -521,10 +521,10 @@ int tr_moveFile( const char * oldpath, const char * newpath,
                  tr_bool * renamed ) TR_GNUC_NONNULL(1,2);
 
 /** @brief convenience function to remove an item from an array */
-static inline void tr_removeElementFromArray( void   * array,
-                                              int      index_to_remove,
-                                              size_t   sizeof_element,
-                                              size_t   nmemb )
+static inline void tr_removeElementFromArray( void         * array,
+                                              unsigned int   index_to_remove,
+                                              size_t         sizeof_element,
+                                              size_t         nmemb )
 {
     char * a = (char*) array;
 

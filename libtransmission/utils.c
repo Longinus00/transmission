@@ -21,27 +21,28 @@
 #endif
 
 #include <assert.h>
-#include <ctype.h> /* isalpha, tolower */
+#include <ctype.h> /* isalpha(), tolower() */
 #include <errno.h>
-#include <math.h> /* pow */
+#include <math.h> /* pow(), fabs() */
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h> /* strerror, memset, memmem */
+#include <string.h> /* strerror(), memset(), memmem() */
+#include <time.h> /* nanosleep() */
 
-#include <libgen.h> /* basename */
+#include <libgen.h> /* basename() */
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h> /* usleep, stat, getcwd, getpagesize */
+#include <unistd.h> /* stat(), getcwd(), getpagesize() */
 
 #include "event.h"
 
 #ifdef WIN32
  #include <w32api.h>
- #define WINVER WindowsXP /* freeaddrinfo(),getaddrinfo(),getnameinfo() */
- #include <direct.h> /* _getcwd */
- #include <windows.h> /* Sleep */
+ #define WINVER WindowsXP /* freeaddrinfo(), getaddrinfo(), getnameinfo() */
+ #include <direct.h> /* _getcwd() */
+ #include <windows.h> /* Sleep() */
 #endif
 
 #include "transmission.h"
@@ -56,7 +57,7 @@
 
 time_t transmission_now = 0;
 
-int                   messageLevel = TR_MSG_INF;
+tr_msg_level messageLevel = TR_MSG_INF;
 static tr_lock *      messageLock = NULL;
 static tr_bool        messageQueuing = FALSE;
 static tr_msg_list *  messageQueue = NULL;
@@ -114,43 +115,27 @@ tr_getLog( void )
 }
 
 void
-tr_setMessageLevel( int level )
+tr_setMessageLevel( tr_msg_level level )
 {
-    messageLevel = MAX( 0, level );
+    messageLevel = level;
 }
 
-int
+tr_msg_level
 tr_getMessageLevel( void )
 {
-    int ret;
-    tr_lockLock( messageLock );
-
-    ret = messageLevel;
-
-    tr_lockUnlock( messageLock );
-    return ret;
+    return messageLevel;
 }
 
 void
 tr_setMessageQueuing( tr_bool enabled )
 {
-    tr_lockLock( messageLock );
-
     messageQueuing = enabled;
-
-    tr_lockUnlock( messageLock );
 }
 
 tr_bool
 tr_getMessageQueuing( void )
 {
-    int ret;
-    tr_lockLock( messageLock );
-
-    ret = messageQueuing;
-
-    tr_lockUnlock( messageLock );
-    return ret;
+    return messageQueuing != 0;
 }
 
 tr_msg_list *
@@ -271,7 +256,8 @@ tr_deepLog( const char  * file,
 
 void
 tr_msg( const char * file, int line,
-        int level, const char * name,
+        tr_msg_level level,
+        const char * name,
         const char * fmt, ... )
 {
     const int err = errno; /* message logging shouldn't affect errno */
@@ -479,7 +465,7 @@ tr_loadFile( const char * path,
     struct stat  sb;
     int fd;
     ssize_t n;
-    const char * err_fmt = _( "Couldn't read \"%1$s\": %2$s" );
+    const char * const err_fmt = _( "Couldn't read \"%1$s\": %2$s" );
 
     /* try to stat the file */
     errno = 0;
@@ -516,7 +502,7 @@ tr_loadFile( const char * path,
         errno = err;
         return NULL;
     }
-    n = read( fd, buf, sb.st_size );
+    n = read( fd, buf, (size_t)sb.st_size );
     if( n == -1 )
     {
         const int err = errno;
@@ -804,12 +790,15 @@ tr_date( void )
 }
 
 void
-tr_wait_msec( uint64_t delay_milliseconds )
+tr_wait_msec( long int msec )
 {
 #ifdef WIN32
-    Sleep( (DWORD)delay_milliseconds );
+    Sleep( (DWORD)msec );
 #else
-    usleep( 1000 * delay_milliseconds );
+    struct timespec ts;
+    ts.tv_sec = msec / 1000;
+    ts.tv_nsec = ( msec % 1000 ) * 1000000;
+    nanosleep( &ts, NULL );
 #endif
 }
 
@@ -877,14 +866,13 @@ tr_strlcpy( char *       dst,
 ***/
 
 double
-tr_getRatio( double numerator,
-             double denominator )
+tr_getRatio( uint64_t numerator, uint64_t denominator )
 {
     double ratio;
 
-    if( denominator )
-        ratio = numerator / denominator;
-    else if( numerator )
+    if( denominator > 0 )
+        ratio = numerator / (double)denominator;
+    else if( numerator > 0 )
         ratio = TR_RATIO_INF;
     else
         ratio = TR_RATIO_NA;
@@ -1408,7 +1396,7 @@ tr_moveFile( const char * oldpath, const char * newpath, tr_bool * renamed )
     char * buf;
     struct stat st;
     off_t bytesLeft;
-    const off_t buflen = 1024 * 128; /* 128 KiB buffer */
+    const size_t buflen = 1024 * 128; /* 128 KiB buffer */
 
     /* make sure the old file exists */
     if( stat( oldpath, &st ) ) {

@@ -20,6 +20,13 @@
 
 #define MY_NAME "Cache"
 
+#define dbgmsg( ... ) \
+    do { \
+        if( tr_deepLoggingIsActive( ) ) \
+            tr_deepLog( __FILE__, __LINE__, MY_NAME, __VA_ARGS__ ); \
+    } while( 0 )
+
+
 /****
 *****
 ****/
@@ -88,9 +95,8 @@ getBlockRun( const tr_cache * cache, int pos, struct run_info * info )
 }
 
 /* return the starting index of the longest contiguous run of blocks BUT:
- *   1 - Length of run must be even.
- *   2 - Run must begin with a even block.
- *   3 - Oldest run is preferred.
+ *   - Run should begin with a even block and length of run should be even.
+ *   - Oldest run is preferred.
  */
 static int
 findChunk2Discard( tr_cache * cache, int * setme_n )
@@ -100,7 +106,7 @@ findChunk2Discard( tr_cache * cache, int * setme_n )
     int bestpos = 0;
     unsigned bestlen = 1;
     unsigned jump;
-    time_t oldest_time = ~0;
+    time_t oldest_time = tr_time() + 1;
     struct run_info run;
 
     for( pos=0; pos<n; pos+=jump )
@@ -114,9 +120,15 @@ findChunk2Discard( tr_cache * cache, int * setme_n )
 
         /* check alignment */
         if( len % 2 == 0 ) {
-            if( !run.is_aligned )
+            if( !run.is_aligned ) {
                 /* Let it grow. Otherwise we contribute to fragmentation */
+                if( bestlen == 1) {
+                    /* But if all other blocks are non-contiguous, we prefer this one */
+                    bestpos = pos;
+                    oldest_time = cache->maxBlocks - len;
+                }
                 continue;
+            }
         } else {
             if( len != 1 ) {
                 --len;
@@ -156,7 +168,7 @@ flushContiguous( tr_cache * cache, int pos, int n )
     const tr_piece_index_t piece = b->piece;
     const uint32_t offset        = b->offset;
 
-//fprintf( stderr, "flushing %d contiguous blocks from [%d to %d)\n", n, pos, n+pos );
+//fprintf( stderr, "flushing %d contiguous blocks [%d-%d) from cache to disk\n", n, pos, n+pos );
 
     for( i=pos; i<pos+n; ++i ) {
         b = blocks[i];
@@ -361,7 +373,7 @@ tr_cacheFlushFile( tr_cache * cache, tr_torrent * torrent, tr_file_index_t i )
     const tr_block_index_t begin = tr_torPieceFirstBlock( torrent, file->firstPiece );
     const tr_block_index_t end  = tr_torPieceFirstBlock( torrent, file->lastPiece ) + tr_torPieceCountBlocks( torrent, file->lastPiece );
     const int pos = findPiece( cache, torrent, file->firstPiece );
-//fprintf( stderr, "flushing file %d, which is blocks [%zu...%zu)\n", (int)i, (size_t)begin, (size_t)end );
+    dbgmsg( "flushing file %d from cache to disk: blocks [%zu...%zu)", (int)i, (size_t)begin, (size_t)end );
 
     /* flush out all the blocks in that file */
     while( !err && ( pos < tr_ptrArraySize( &cache->blocks ) ) )
