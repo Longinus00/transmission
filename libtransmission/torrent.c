@@ -370,7 +370,7 @@ onTrackerResponse( tr_torrent * tor, const tr_tracker_event * event, void * unus
         case TR_TRACKER_PEERS:
         {
             size_t i, n;
-            const int seedProbability = event->seedProbability;
+            const int8_t seedProbability = event->seedProbability;
             const tr_bool allAreSeeds = seedProbability == 100;
             tr_pex * pex = tr_peerMgrArrayToPex( event->compact,
                                                  event->compactLen, &n );
@@ -416,9 +416,8 @@ onTrackerResponse( tr_torrent * tor, const tr_tracker_event * event, void * unus
 ****
 ***/
 
-static int
-getBytePiece( const tr_info * info,
-              uint64_t        byteOffset )
+static tr_piece_index_t
+getBytePiece( const tr_info * info, uint64_t byteOffset )
 {
     assert( info );
     assert( info->pieceSize != 0 );
@@ -456,7 +455,7 @@ calculatePiecePriority( const tr_torrent * tor,
                         int                fileHint )
 {
     tr_file_index_t i;
-    int             priority = TR_PRI_LOW;
+    tr_priority_t priority = TR_PRI_LOW;
 
     /* find the first file that has data in this piece */
     if( fileHint >= 0 ) {
@@ -567,7 +566,7 @@ torrentInitFromInfo( tr_torrent * tor )
     tor->blockSize = tr_getBlockSize( info->pieceSize );
 
     if( info->pieceSize )
-        tor->lastPieceSize = info->totalSize % info->pieceSize;
+        tor->lastPieceSize = (uint32_t)(info->totalSize % info->pieceSize);
 
     if( !tor->lastPieceSize )
         tor->lastPieceSize = info->pieceSize;
@@ -983,9 +982,7 @@ tr_torrentStat( tr_torrent * tor )
     s->sizeWhenDone  = tr_cpSizeWhenDone ( &tor->completion );
 
     s->recheckProgress = s->activity == TR_STATUS_CHECK
-                       ? 1.0 -
-                         ( tr_torrentCountUncheckedPieces( tor ) /
-                           (double) tor->info.pieceCount )
+                       ? 1.0 - ( tr_torrentCountUncheckedPieces( tor ) / (float) tor->info.pieceCount )
                        : 0.0;
 
     s->activityDate = tor->activityDate;
@@ -1175,7 +1172,7 @@ tr_torrentFiles( const tr_torrent * tor,
     for( i=0; i<n; ++i, ++walk ) {
         const uint64_t b = isSeed ? tor->info.files[i].length : fileBytesCompleted( tor, i );
         walk->bytesCompleted = b;
-        walk->progress = tor->info.files[i].length > 0 ? ( (float)b / tor->info.files[i].length ) : 1.0;
+        walk->progress = tor->info.files[i].length > 0 ? ( b / tor->info.files[i].length ) : 1.0;
     }
 
     if( fileCount )
@@ -1844,9 +1841,11 @@ static void
 setFileDND( tr_torrent * tor, tr_file_index_t fileIndex, int doDownload )
 {
     tr_file *        file;
-    const int        dnd = !doDownload;
-    tr_piece_index_t firstPiece, firstPieceDND;
-    tr_piece_index_t lastPiece, lastPieceDND;
+    const int8_t     dnd = !doDownload;
+    tr_piece_index_t firstPiece;
+    int8_t           firstPieceDND;
+    tr_piece_index_t lastPiece;
+    int8_t           lastPieceDND;
     tr_file_index_t  i;
 
     assert( tr_isTorrent( tor ) );

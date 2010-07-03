@@ -63,7 +63,9 @@ extern "C" {
 
 typedef uint32_t tr_file_index_t;
 typedef uint32_t tr_piece_index_t;
-typedef uint64_t tr_block_index_t;
+/* assuming a 16 KiB block, a 32-bit block index gives us a maximum torrent size of 63 TiB.
+ * if we ever need to grow past that, change this to uint64_t ;) */
+typedef uint32_t tr_block_index_t;
 typedef uint16_t tr_port;
 typedef uint8_t tr_bool;
 
@@ -771,20 +773,22 @@ void tr_sessionSetTorrentDoneScript( tr_session *, const char * scriptFilename )
 ** Message Logging
 */
 
-enum
+typedef enum
 {
     TR_MSG_ERR = 1,
     TR_MSG_INF = 2,
     TR_MSG_DBG = 3
-};
-void tr_setMessageLevel( int );
+}
+tr_msg_level;
 
-int  tr_getMessageLevel( void );
+void tr_setMessageLevel( tr_msg_level );
+
+tr_msg_level tr_getMessageLevel( void );
 
 typedef struct tr_msg_list
 {
     /* TR_MSG_ERR, TR_MSG_INF, or TR_MSG_DBG */
-    uint8_t level;
+    tr_msg_level level;
 
     /* The line number in the source file where this message originated */
     int line;
@@ -1719,28 +1723,28 @@ typedef struct tr_stat
         verified.  When it gets to 1, the verify process is done.
         Range is [0..1]
         @see tr_stat.status */
-    float    recheckProgress;
+    double recheckProgress;
 
     /** How much has been downloaded of the entire torrent.
         Range is [0..1] */
-    float    percentComplete;
+    double percentComplete;
 
     /** How much of the metadata the torrent has.
         For torrents added from a .torrent this will always be 1.
         For magnet links, this number will from from 0 to 1 as the metadata is downloaded.
         Range is [0..1] */
-    float    metadataPercentComplete;
+    double metadataPercentComplete;
 
     /** How much has been downloaded of the files the user wants.  This differs
         from percentComplete if the user wants only some of the torrent's files.
         Range is [0..1]
         @see tr_stat.leftUntilDone */
-    float    percentDone;
+    double percentDone;
 
     /** How much has been uploaded to satisfy the seed ratio.
         This is 1 if the ratio is reached or the torrent is set to seed forever.
         Range is [0..1] */
-    float    seedRatioPercentDone;
+    double seedRatioPercentDone;
 
     /** Speed all data being sent for this torrent. (KiB/s)
         This includes piece data, protocol messages, and TCP overhead */
